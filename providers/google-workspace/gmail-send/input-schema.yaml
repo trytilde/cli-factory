@@ -1,0 +1,28 @@
+type: object
+required:
+  - to
+  - subject
+  - body_text
+properties:
+  to:
+    type: array
+    items:
+      type: string
+    minItems: 1
+    description: Recipient email addresses.
+  cc:
+    type: array
+    items:
+      type: string
+    description: Optional CC recipients.
+  bcc:
+    type: array
+    items:
+      type: string
+    description: Optional BCC recipients.
+  subject:
+    type: string
+    minLength: 1
+  body_text:
+    type: string
+    minLength: 1

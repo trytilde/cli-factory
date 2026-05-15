@@ -1,0 +1,15 @@
+id: calendar-create
+name: Calendar Create
+short_description: Create a Google Calendar event.
+long_description: |
+  Create a Google Calendar event on the configured calendar and return compact
+  event details.
+categories:
+  - calendar
+  - scheduling
+aliases:
+  - create-event
+  - schedule
+command_path:
+  - google-workspace
+  - calendar-create

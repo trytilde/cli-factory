@@ -1,0 +1,16 @@
+id: gmail-check
+name: Gmail Check
+short_description: Search recent Gmail messages.
+long_description: |
+  Search or list Gmail messages for the authenticated Google Workspace user and
+  return compact message details.
+categories:
+  - email
+  - gmail
+  - search
+aliases:
+  - check-email
+  - search-email
+command_path:
+  - google-workspace
+  - gmail-check

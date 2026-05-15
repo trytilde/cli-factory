@@ -1,0 +1,19 @@
+type: object
+properties:
+  result_count:
+    type: integer
+  messages:
+    type: array
+    items:
+      type: object
+      properties:
+        id:
+          type: string
+        thread_id:
+          type: string
+        snippet:
+          type: string
+        label_ids:
+          type: array
+          items:
+            type: string
