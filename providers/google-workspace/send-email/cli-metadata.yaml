@@ -1,0 +1,17 @@
+id: send-email
+name: Send Email
+short_description: Send a Gmail message to one or more recipients.
+long_description: |
+  Sends an email through the Gmail API for the authenticated user. Supports To,
+  Cc, Bcc, optional From, plain text or HTML bodies, and a dry-run mode that
+  builds the message without calling Gmail.
+categories:
+  - email
+  - communication
+aliases:
+  - send gmail
+  - email someone
+  - compose email
+command_path:
+  - google-workspace
+  - send-email

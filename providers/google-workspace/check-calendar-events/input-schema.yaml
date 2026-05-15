@@ -1,0 +1,23 @@
+type: object
+properties:
+  calendar_id:
+    type: string
+    description: Calendar identifier. Use "primary" for the authenticated user's primary calendar.
+  time_min:
+    type: string
+    description: Lower bound RFC3339 datetime for event end time.
+  time_max:
+    type: string
+    description: Upper bound RFC3339 datetime for event start time.
+  query:
+    type: string
+    description: Free-text search terms for events.
+  max_results:
+    type: integer
+    description: Maximum events to return, capped at 50.
+  single_events:
+    type: boolean
+    description: Expand recurring events into individual instances.
+  show_deleted:
+    type: boolean
+    description: Include deleted events.

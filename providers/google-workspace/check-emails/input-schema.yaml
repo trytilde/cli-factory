@@ -1,0 +1,19 @@
+type: object
+properties:
+  user_id:
+    type: string
+    description: Gmail user id or email address. Use "me" for the authenticated user.
+  query:
+    type: string
+    description: Gmail search query, such as "from:alice@example.com is:unread".
+  label_ids:
+    type: array
+    description: Gmail label IDs to filter by. CLI accepts comma-separated values.
+    items:
+      type: string
+  max_results:
+    type: integer
+    description: Maximum messages to return, capped at 50.
+  include_spam_trash:
+    type: boolean
+    description: Include messages from Spam and Trash.

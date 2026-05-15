@@ -1,0 +1,13 @@
+type: object
+properties:
+  events:
+    type: array
+    description: Matching calendar event summaries.
+    items:
+      type: object
+  next_page_token:
+    type: string
+    description: Token for the next Calendar result page when available.
+  time_zone:
+    type: string
+    description: Calendar timezone returned by Google Calendar.

@@ -1,0 +1,19 @@
+type: object
+properties:
+  id:
+    type: string
+    description: Gmail message id returned after sending.
+  thread_id:
+    type: string
+    description: Gmail thread id returned after sending.
+  label_ids:
+    type: array
+    description: Gmail label ids returned after sending.
+    items:
+      type: string
+  dry_run:
+    type: boolean
+    description: Whether the message was only built and not sent.
+  recipient_count:
+    type: integer
+    description: Number of To, Cc, and Bcc recipients in the built message.
