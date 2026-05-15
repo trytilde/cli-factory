@@ -14,66 +14,6 @@
         "debug"
       ],
       "search_document": "example Example echo Echo Echo a message for CLI and e2e validation. Echo returns the provided message and is intentionally local, deterministic, and safe for CI e2e tests. example debug repeat say"
-    },
-    {
-      "id": "google-workspace.check-calendar-events",
-      "provider_id": "google-workspace",
-      "command_path": [
-        "google-workspace",
-        "check-calendar-events"
-      ],
-      "name": "Check Calendar Events",
-      "description": "List Google Calendar events in a time window.",
-      "categories": [
-        "calendar",
-        "scheduling"
-      ],
-      "search_document": "google-workspace Google Workspace check-calendar-events Check Calendar Events List Google Calendar events in a time window. Lists events from a Google Calendar with optional time bounds, text query, attendee expansion, ordering, and single-event expansion for recurring events. calendar scheduling list calendar check schedule upcoming events"
-    },
-    {
-      "id": "google-workspace.check-emails",
-      "provider_id": "google-workspace",
-      "command_path": [
-        "google-workspace",
-        "check-emails"
-      ],
-      "name": "Check Emails",
-      "description": "Search recent Gmail messages and return readable summaries.",
-      "categories": [
-        "email",
-        "communication"
-      ],
-      "search_document": "google-workspace Google Workspace check-emails Check Emails Search recent Gmail messages and return readable summaries. Lists Gmail messages matching an optional Gmail search query and fetches metadata for each result so agents can inspect sender, recipients, subject, date, snippet, message id, and thread id. email communication search gmail read inbox check mail"
-    },
-    {
-      "id": "google-workspace.create-calendar-event",
-      "provider_id": "google-workspace",
-      "command_path": [
-        "google-workspace",
-        "create-calendar-event"
-      ],
-      "name": "Create Calendar Event",
-      "description": "Create an event on a Google Calendar.",
-      "categories": [
-        "calendar",
-        "scheduling"
-      ],
-      "search_document": "google-workspace Google Workspace create-calendar-event Create Calendar Event Create an event on a Google Calendar. Creates a Google Calendar event with summary, start and end times, optional attendees, location, description, timezone, and Google Meet conference data. A dry-run mode validates and returns the event payload without writing. calendar scheduling schedule meeting create google calendar event add calendar event"
-    },
-    {
-      "id": "google-workspace.send-email",
-      "provider_id": "google-workspace",
-      "command_path": [
-        "google-workspace",
-        "send-email"
-      ],
-      "name": "Send Email",
-      "description": "Send a Gmail message to one or more recipients.",
-      "categories": [
-        "email",
-        "communication"
-      ],
-      "search_document": "google-workspace Google Workspace send-email Send Email Send a Gmail message to one or more recipients. Sends an email through the Gmail API for the authenticated user. Supports To, Cc, Bcc, optional From, plain text or HTML bodies, and dry-run mode. email communication send gmail email someone compose email"
     }
   ]
 }
