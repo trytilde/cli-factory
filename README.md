@@ -1,0 +1,153 @@
+<p align="center">
+  <a href="https://github.com/trytilde/cli-factory"><img src="https://img.shields.io/badge/GitHub-trytilde%2Fcli--factory-181717?style=for-the-badge&logo=github" alt="GitHub"></a>
+  <a href="https://discord.gg/jj7sNyCGD4"><img src="https://img.shields.io/badge/Discord-Join%20the%20community-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Join our Discord"></a>
+</p>
+
+# CLI Factory
+
+CLI Factory builds `factory`: a single static binary for AI agents to discover and invoke curated SaaS/tool commands.
+
+Most CLIs are human-first. `factory` is agent-first: semantic search, progressive discovery, structured schemas, terse status output, full JSON invocation logs, and provider commands designed as useful workflows rather than raw API CRUD.
+
+## Why this exists
+
+Agents need tool access that is compact, predictable, and safe to reason about in limited context windows. CLI Factory provides a repeatable way to add SaaS providers with high-level commands like:
+
+```bash
+factory google send-email --to user@example.com --subject "Hello" --body "..."
+```
+
+The CLI helps agents find the right capability, inspect only the detail they need, invoke it once with explicit params, and keep full output in local logs instead of flooding the conversation.
+
+## Features
+
+- Single static Go binary for macOS, Linux, and Windows
+- Agent-first semantic search across providers and tools
+- Progressive discovery with `factory discover short` and `factory discover long`
+- Default output is only `SUCCESS` or `FAILURE` plus a full JSON log path
+- `--debug` for full stdout/stderr JSON when needed
+- Provider-level optional auth/connection params such as `--bearer-token`, `--api-key`, and `--base-url`
+- No credential storage or profiles
+- Compact embedded binary embedding catalogue
+- Provider e2e test harness with SOPS-encrypted `test_secrets.enc.yaml`
+- Generated provider docs into the shared `trytilde/docs` Mintlify submodule
+- Add/update provider skills for contributors
+
+## Install
+
+Latest release:
+
+```bash
+curl -sSfL https://raw.githubusercontent.com/trytilde/cli-factory/main/install.sh | bash
+```
+
+This installs `factory` to `~/.factory/bin/factory`.
+
+Install a specific release:
+
+```bash
+curl -sSfL https://raw.githubusercontent.com/trytilde/cli-factory/main/install.sh | bash -s -- --version v0.1.0
+```
+
+Add it to your shell path if needed:
+
+```bash
+export PATH="$HOME/.factory/bin:$PATH"
+```
+
+## Quickstart
+
+Search first:
+
+```bash
+factory search "send an email"
+```
+
+Then progressively discover only what you need:
+
+```bash
+factory discover short google
+factory discover short google send-email
+factory discover long google send-email
+```
+
+Invoke directly:
+
+```bash
+factory google send-email --bearer-token "$TOKEN" --to user@example.com --subject "Hello" --body "Hi"
+```
+
+By default, commands print:
+
+```text
+SUCCESS
+full logs at /absolute/path/to/log.json
+```
+
+Use `--debug` when you want the full JSON result in the terminal.
+
+## Development
+
+Clone with the docs submodule:
+
+```bash
+git clone --recurse-submodules https://github.com/trytilde/cli-factory
+cd cli-factory
+```
+
+Run the core checks:
+
+```bash
+go test ./...
+make generate-docs
+make generate-catalog
+make build
+```
+
+Cross-compile static binaries:
+
+```bash
+make build-all
+```
+
+CI runs unit tests, provider e2e tests, docs/catalogue generation, and static builds. Releases publish Go binaries to GitHub Releases.
+
+## Add or update a provider
+
+Use the repo skills:
+
+- `skills/add-provider/SKILL.md` for a new provider
+- `skills/update-provider/SKILL.md` for existing provider changes
+- `skills/use-factory-cli/SKILL.md` for production agent usage
+
+Provider layout:
+
+```text
+providers/<provider>/
+├── cli-metadata.yaml
+├── generator-metadata.yaml
+├── generator-prompt.md
+├── test_secrets.example.yaml
+├── test_secrets.enc.yaml
+└── <tool>/
+    ├── cli-metadata.yaml
+    ├── input-schema.yaml
+    ├── output-schema.yaml
+    ├── mod.go
+    └── e2e_test.go
+```
+
+Provider rules:
+
+- Build high-level agent workflows, not low-level CRUD dumps.
+- Add/update e2e tests for every provider command.
+- Use `override_test_secrets.yaml` for local throwaway credentials; never commit it.
+- Commit only encrypted shared provider secrets as `test_secrets.enc.yaml`.
+- Run `make generate-docs` and `make generate-catalog` after metadata/schema changes.
+
+## Contribute
+
+CLI Factory is intended to become a shared catalogue of high-quality agent tools. If you want agents to use your SaaS product well, contribute a provider with a small set of thoughtful commands and real e2e tests.
+
+Star the project, open issues or PRs, and join the Tilde community on [Discord](https://discord.gg/jj7sNyCGD4).
+
