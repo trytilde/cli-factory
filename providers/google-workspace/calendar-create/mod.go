@@ -10,42 +10,19 @@ import (
 
 type Tool struct{}
 
-func (Tool) ID() string               { return "calendar-create" }
-func (Tool) Name() string             { return "Calendar Create" }
-func (Tool) ShortDescription() string { return "Create a Google Calendar event." }
-func (Tool) LongDescription() string {
-	return "Create a Google Calendar event on the configured calendar and return compact event details."
+func (Tool) ID() string               { return toolID }
+func (Tool) Name() string             { return toolName }
+func (Tool) ShortDescription() string { return toolShortDescription }
+func (Tool) LongDescription() string  { return toolLongDescription }
+func (Tool) Categories() []string {
+	return append([]string(nil), toolCategories...)
 }
-func (Tool) Categories() []string { return []string{"calendar", "scheduling"} }
-func (Tool) Aliases() []string    { return []string{"create-event", "schedule"} }
+func (Tool) Aliases() []string { return append([]string(nil), toolAliases...) }
 func (Tool) InputSchema() schema.JSONSchema {
-	return schema.JSONSchema{
-		"type":     "object",
-		"required": []any{"summary", "start", "end"},
-		"properties": map[string]any{
-			"summary":     map[string]any{"type": "string", "minLength": 1},
-			"start":       map[string]any{"type": "string", "format": "date-time", "description": "RFC3339 start timestamp."},
-			"end":         map[string]any{"type": "string", "format": "date-time", "description": "RFC3339 end timestamp."},
-			"time_zone":   map[string]any{"type": "string", "description": "Optional IANA time zone."},
-			"description": map[string]any{"type": "string"},
-			"location":    map[string]any{"type": "string"},
-			"attendees":   map[string]any{"type": "array", "items": map[string]any{"type": "object", "required": []any{"email"}, "properties": map[string]any{"email": map[string]any{"type": "string"}, "display_name": map[string]any{"type": "string"}}}},
-		},
-	}
+	return toolInputSchema
 }
 func (Tool) OutputSchema() schema.JSONSchema {
-	return schema.JSONSchema{
-		"type": "object",
-		"properties": map[string]any{
-			"event_id":  map[string]any{"type": "string"},
-			"html_link": map[string]any{"type": "string"},
-			"status":    map[string]any{"type": "string"},
-			"summary":   map[string]any{"type": "string"},
-			"start":     map[string]any{"type": "string"},
-			"end":       map[string]any{"type": "string"},
-			"attendees": map[string]any{"type": "array", "items": map[string]any{"type": "object", "properties": map[string]any{"email": map[string]any{"type": "string"}, "response_status": map[string]any{"type": "string"}}}},
-		},
-	}
+	return toolOutputSchema
 }
 
 func (Tool) Invoke(ctx context.Context, req provider.InvokeRequest, events provider.EventSink) (provider.InvokeResult, error) {

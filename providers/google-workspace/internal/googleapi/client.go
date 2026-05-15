@@ -22,40 +22,28 @@ import (
 const (
 	gmailBaseURL    = "https://gmail.googleapis.com/gmail/v1"
 	calendarBaseURL = "https://www.googleapis.com/calendar/v3"
-	tokenURL        = "https://oauth2.googleapis.com/token"
 )
 
 type Config struct {
-	ClientID     string
-	ClientSecret string
-	RefreshToken string
-	UserID       string
-	CalendarID   string
+	AccessToken string
+	UserID      string
+	CalendarID  string
 }
 
 type Client struct {
 	Config Config
 	HTTP   *http.Client
-	token  string
 }
 
 func New(params map[string]any) (*Client, error) {
 	cfg := Config{
-		ClientID:     stringParam(params, "client_id"),
-		ClientSecret: stringParam(params, "client_secret"),
-		RefreshToken: stringParam(params, "refresh_token"),
-		UserID:       defaultString(stringParam(params, "user_id"), "me"),
-		CalendarID:   defaultString(stringParam(params, "calendar_id"), "primary"),
+		AccessToken: stringParam(params, "access_token"),
+		UserID:      defaultString(stringParam(params, "user_id"), "me"),
+		CalendarID:  defaultString(stringParam(params, "calendar_id"), "primary"),
 	}
 	var missing []string
-	if cfg.ClientID == "" {
-		missing = append(missing, "client_id")
-	}
-	if cfg.ClientSecret == "" {
-		missing = append(missing, "client_secret")
-	}
-	if cfg.RefreshToken == "" {
-		missing = append(missing, "refresh_token")
+	if cfg.AccessToken == "" {
+		missing = append(missing, "access_token")
 	}
 	if len(missing) > 0 {
 		return nil, &provider.Error{Code: "validation_failed", Message: "missing provider params: " + strings.Join(missing, ", "), Retryable: false}
@@ -171,10 +159,6 @@ func (c *Client) DeleteEvent(ctx context.Context, id string) error {
 }
 
 func (c *Client) do(ctx context.Context, method, endpoint string, headers map[string]string, payload any, out any) error {
-	token, err := c.accessToken(ctx)
-	if err != nil {
-		return err
-	}
 	var body io.Reader
 	if payload != nil {
 		data, err := json.Marshal(payload)
@@ -187,7 +171,7 @@ func (c *Client) do(ctx context.Context, method, endpoint string, headers map[st
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Authorization", "Bearer "+c.Config.AccessToken)
 	if payload != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
@@ -206,42 +190,6 @@ func (c *Client) do(ctx context.Context, method, endpoint string, headers map[st
 		return nil
 	}
 	return json.NewDecoder(resp.Body).Decode(out)
-}
-
-func (c *Client) accessToken(ctx context.Context) (string, error) {
-	if c.token != "" {
-		return c.token, nil
-	}
-	form := url.Values{}
-	form.Set("client_id", c.Config.ClientID)
-	form.Set("client_secret", c.Config.ClientSecret)
-	form.Set("refresh_token", c.Config.RefreshToken)
-	form.Set("grant_type", "refresh_token")
-	form.Set("scope", "https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/calendar.events")
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, tokenURL, strings.NewReader(form.Encode()))
-	if err != nil {
-		return "", err
-	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	resp, err := c.httpClient().Do(req)
-	if err != nil {
-		return "", &provider.Error{Code: "auth_failed", Message: err.Error(), Retryable: true}
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return "", parseGoogleError(resp)
-	}
-	var parsed struct {
-		AccessToken string `json:"access_token"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
-		return "", err
-	}
-	if parsed.AccessToken == "" {
-		return "", &provider.Error{Code: "auth_failed", Message: "Google token response did not include access_token", Retryable: false}
-	}
-	c.token = parsed.AccessToken
-	return c.token, nil
 }
 
 func (c *Client) httpClient() *http.Client {

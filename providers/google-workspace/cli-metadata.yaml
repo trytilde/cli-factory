@@ -13,12 +13,10 @@ aliases:
   - gmail
   - calendar
 provider_parameters:
-  - name: client_id
-    description: Google OAuth 2.0 client ID.
-  - name: client_secret
-    description: Google OAuth 2.0 client secret.
-  - name: refresh_token
-    description: OAuth refresh token for the Google Workspace user.
+  - name: access_token
+    description: Google OAuth 2.0 access token with Gmail and Calendar scopes.
+    required: true
+    secret: true
   - name: user_id
     description: Gmail user identifier. Defaults to me.
   - name: calendar_id

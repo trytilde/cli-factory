@@ -10,36 +10,19 @@ import (
 
 type Tool struct{}
 
-func (Tool) ID() string               { return "gmail-send" }
-func (Tool) Name() string             { return "Gmail Send" }
-func (Tool) ShortDescription() string { return "Send a Gmail message from a Google Workspace account." }
-func (Tool) LongDescription() string {
-	return "Send a plain-text Gmail message through the Gmail API using OAuth-backed Google Workspace credentials."
+func (Tool) ID() string               { return toolID }
+func (Tool) Name() string             { return toolName }
+func (Tool) ShortDescription() string { return toolShortDescription }
+func (Tool) LongDescription() string  { return toolLongDescription }
+func (Tool) Categories() []string {
+	return append([]string(nil), toolCategories...)
 }
-func (Tool) Categories() []string { return []string{"email", "gmail"} }
-func (Tool) Aliases() []string    { return []string{"send-email", "email"} }
+func (Tool) Aliases() []string { return append([]string(nil), toolAliases...) }
 func (Tool) InputSchema() schema.JSONSchema {
-	return schema.JSONSchema{
-		"type":     "object",
-		"required": []any{"to", "subject", "body_text"},
-		"properties": map[string]any{
-			"to":        map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "minItems": 1, "description": "Recipient email addresses."},
-			"cc":        map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "Optional CC recipients."},
-			"bcc":       map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "Optional BCC recipients."},
-			"subject":   map[string]any{"type": "string", "minLength": 1},
-			"body_text": map[string]any{"type": "string", "minLength": 1},
-		},
-	}
+	return toolInputSchema
 }
 func (Tool) OutputSchema() schema.JSONSchema {
-	return schema.JSONSchema{
-		"type": "object",
-		"properties": map[string]any{
-			"message_id": map[string]any{"type": "string"},
-			"thread_id":  map[string]any{"type": "string"},
-			"label_ids":  map[string]any{"type": "array", "items": map[string]any{"type": "string"}},
-		},
-	}
+	return toolOutputSchema
 }
 
 func (Tool) Invoke(ctx context.Context, req provider.InvokeRequest, events provider.EventSink) (provider.InvokeResult, error) {
