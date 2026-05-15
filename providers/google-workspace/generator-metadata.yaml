@@ -389,26 +389,18 @@ testing:
     calendar_id: primary
 implementation:
   notes:
-    - "Run 2 retried gmail-send after Gmail API enablement. The CLI/provider
-      send path succeeded and returned Gmail message_id 19e2c0d9a2196308 with
-      redacted provider params in the invocation log."
-    - "Run 2 verification failed when listing Gmail by query: Google returned
-      'Metadata scope does not support q parameter', which indicates the saved
-      refresh token does not include gmail.modify/read-capable access."
-    - "Run 1 fixed e2e repo-root detection to locate go.mod instead of the
-      parent cli-factory directory."
-    - "Run 1 fixed direct provider-tool CLI handling so --params-json and
-      --provider-params-json are passed through to invokeTool instead of being
-      skipped."
-    - "Run 1 fixed google-workspace provider imports for hyphenated tool
-      directories."
-    - "Targeted real e2e reached the Gmail API. Invocation logs redacted
-      client_id, client_secret, and refresh_token in provider params."
-  last_failure: "Targeted gmail-send e2e now sends successfully, but Gmail
-    search/check and cleanup are blocked by insufficient refresh-token scopes:
-    Google reports 'Metadata scope does not support q parameter'."
-  next_action: "Regenerate and save providers/google-workspace/override_test_secrets.yaml
-    with a refresh token authorized for https://www.googleapis.com/auth/gmail.modify,
-    https://www.googleapis.com/auth/gmail.send, and
-    https://www.googleapis.com/auth/calendar.events; then rerun GOCACHE=/tmp/go-cache
-    make test-provider-tool PROVIDER=google-workspace TOOL=gmail-send."
+    - Run 3 saved the regenerated refresh token locally, patched OAuth refresh
+      to request the narrower access-token subset gmail.modify, gmail.send, and
+      calendar.events so Gmail query search is not blocked by the token also
+      having gmail.metadata.
+    - Run 3 targeted e2e passed for gmail-send, gmail-check, calendar-create,
+      calendar-check, and make test-provider PROVIDER=google-workspace.
+    - "Run 3 broad checks passed: make test-unit, make test-e2e, make
+      generate-docs, make generate-catalog, and make build."
+    - Run 3 fixed the pre-existing example provider e2e repo-root helper to
+      locate go.mod, allowing make test-e2e to pass in this workspace layout.
+  last_failure: No provider/test failure remains after run 3. The only remaining
+    blocker is Git push from this clone, which still fails because the local
+    repository has missing blobs unrelated to the provider changes.
+  next_action: Repair or reclone the Git repository before pushing the local
+    branch/tags, or apply the local commits from this branch in a healthy clone.
