@@ -15,4 +15,4 @@ provider_parameters:
     description: Optional base URL used by providers that proxy requests.
   - name: bearer_token
     description: Optional bearer token for providers that need API auth.
-
+    secret: true

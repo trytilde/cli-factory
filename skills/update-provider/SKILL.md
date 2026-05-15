@@ -17,6 +17,8 @@ Use this skill when changing an existing provider, adding a tool to an existing 
 - Do not rename provider ids, tool ids, command paths, parameters, output fields, aliases, or categories unless explicitly approved.
 - Preserve existing metadata by default; only change descriptions, aliases, categories, schemas, or prompts when the update requires it.
 - Default to non-destructive e2e tests.
+- Treat `cli-metadata.yaml`, `input-schema.yaml`, and `output-schema.yaml` as the source of truth. Do not hard-code provider/tool names, descriptions, categories, aliases, provider parameters, or JSON schemas in handwritten Go.
+- Run `make generate-metadata` after metadata/schema edits. Generated `metadata_gen.go` files compile that YAML into static Go values and must not be manually edited.
 
 ## Phase 1: Inspect Existing Provider
 
@@ -98,6 +100,14 @@ Resolve:
 - If behavior changes, update `long_description`, examples, and e2e tests in the same change.
 - If provider/tool metadata or schemas change, regenerate Mintlify docs in the same change.
 - Generated docs are derived from metadata and schemas; do not hand-edit generated provider/tool docs to hide stale metadata.
+- Handwritten `mod.go` files should return generated values from `metadata_gen.go` for metadata and schemas. Keep handwritten Go focused on tool registration, validation that cannot be expressed in JSON Schema, API calls, and result shaping.
+
+For OAuth, OIDC, device-code, or related delegated-auth providers:
+
+- The actual CLI command should usually accept a current `access_token` or `bearer_token` provider parameter.
+- Do not make the CLI require durable OAuth client credentials unless the provider API itself requires that per invocation.
+- E2E tests can use durable test secrets such as `client_id`, `client_secret`, `refresh_token`, issuer/tenant values, scopes, service account material, or dedicated test login credentials.
+- The Go e2e test should mint or refresh the access token during the test run, pass that access token into the CLI invocation, and avoid asking users for short-lived bearer tokens as the primary secret.
 
 ## Phase 5: Test Secret Handling
 
@@ -185,6 +195,7 @@ make test-provider PROVIDER=<provider>
 If metadata or schemas changed, regenerate human docs:
 
 ```text
+make generate-metadata
 make generate-docs
 ```
 

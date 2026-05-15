@@ -16,6 +16,8 @@ Use this skill when creating a new provider under `providers/<provider>` or addi
 - Resolve provider/tool boundaries before implementation.
 - Propose `CONTEXT.md` glossary additions and ADRs when decisions crystallize. Keep glossary entries domain-only; put implementation decisions in ADRs.
 - Prefer non-destructive tests and dry-run modes. Before running e2e, confirm params so nothing destructive happens.
+- Treat `cli-metadata.yaml`, `input-schema.yaml`, and `output-schema.yaml` as the source of truth. Do not hard-code provider/tool names, descriptions, categories, aliases, provider parameters, or JSON schemas in handwritten Go.
+- Run `make generate-metadata` after metadata/schema edits. Generated `metadata_gen.go` files compile that YAML into static Go values and must not be manually edited.
 
 ## Phase 1: Ground In The Repo
 
@@ -78,13 +80,20 @@ Resolve:
 
 - provider id, display name, aliases, categories
 - `short_description` and `long_description`
-- provider-level optional params such as `bearer_token`, `api_key`, `base_url`, account/workspace/project ids, and dry-run flags
+- provider-level optional params such as `bearer_token`, `access_token`, `api_key`, `base_url`, account/workspace/project ids, and dry-run flags
 - curated tool list and command paths
 - destructive behavior, dry-run support, idempotency keys, and cleanup strategy
 - search aliases and example user intents
 - e2e test target account/workspace/project
 
 Reject raw CRUD dumps unless the user explicitly justifies a low-level primitive.
+
+For OAuth, OIDC, device-code, or related delegated-auth providers:
+
+- The actual CLI command should usually accept a current `access_token` or `bearer_token` provider parameter.
+- Do not make the CLI require durable OAuth client credentials unless the provider API itself requires that per invocation.
+- E2E tests can use durable test secrets such as `client_id`, `client_secret`, `refresh_token`, issuer/tenant values, scopes, service account material, or dedicated test login credentials.
+- The Go e2e test should mint or refresh the access token during the test run, pass that access token into the CLI invocation, and avoid asking users for short-lived bearer tokens as the primary secret.
 
 ## Phase 4: Plan Files
 
@@ -94,6 +103,7 @@ For each new provider, create:
 providers/<provider>/
 ├── mod.go
 ├── cli-metadata.yaml
+├── metadata_gen.go
 ├── generator-metadata.yaml
 ├── generator-prompt.md
 ├── test_secrets.example.yaml
@@ -101,6 +111,7 @@ providers/<provider>/
 └── <tool>/
     ├── mod.go
     ├── cli-metadata.yaml
+    ├── metadata_gen.go
     ├── generator-prompt.md
     ├── input-schema.yaml
     ├── output-schema.yaml
@@ -117,6 +128,8 @@ Mintlify human documentation is generated from these metadata and schema files i
 ```
 
 The generated provider page must summarize the provider, categories, aliases, provider parameters, and tools. The generated tool page must summarize what the tool does, command path, provider parameters, input params, output fields, full input schema, and full output schema.
+
+Handwritten `mod.go` files should return generated values from `metadata_gen.go` for metadata and schemas. Keep handwritten Go focused on tool registration, validation that cannot be expressed in JSON Schema, API calls, and result shaping.
 
 ## Phase 5: Test Secret Handshake
 
@@ -197,6 +210,7 @@ make test-provider PROVIDER=<provider>
 After metadata and schemas are stable, regenerate human docs:
 
 ```text
+make generate-metadata
 make generate-docs
 ```
 

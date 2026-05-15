@@ -98,6 +98,7 @@ cd cli-factory
 Run the core checks:
 
 ```bash
+make generate-metadata
 go test ./...
 make generate-docs
 make generate-catalog
@@ -125,14 +126,17 @@ Provider layout:
 ```text
 providers/<provider>/
 ├── cli-metadata.yaml
+├── metadata_gen.go
 ├── generator-metadata.yaml
 ├── generator-prompt.md
 ├── test_secrets.example.yaml
 ├── test_secrets.enc.yaml
+├── mod.go
 └── <tool>/
     ├── cli-metadata.yaml
     ├── input-schema.yaml
     ├── output-schema.yaml
+    ├── metadata_gen.go
     ├── mod.go
     └── e2e_test.go
 ```
@@ -140,6 +144,10 @@ providers/<provider>/
 Provider rules:
 
 - Build high-level agent workflows, not low-level CRUD dumps.
+- Treat `cli-metadata.yaml`, `input-schema.yaml`, and `output-schema.yaml` as the source of truth for provider/tool metadata and schemas.
+- Run `make generate-metadata` after metadata/schema edits. It emits `metadata_gen.go` files with static strings and schema maps compiled into the `factory` binary.
+- Do not hand-edit `metadata_gen.go`, or duplicate descriptions, categories, aliases, provider params, or JSON schemas in handwritten Go files.
+- For OAuth client flows, the CLI should usually accept an access token or bearer token provider parameter. E2E tests may use durable test secrets such as `client_id`, `client_secret`, and `refresh_token` to mint a fresh access token before invoking the CLI.
 - Add/update e2e tests for every provider command.
 - Use `override_test_secrets.yaml` for local throwaway credentials; never commit it.
 - Commit only encrypted shared provider secrets as `test_secrets.enc.yaml`.
@@ -150,4 +158,3 @@ Provider rules:
 CLI Factory is intended to become a shared catalogue of high-quality agent tools. If you want agents to use your SaaS product well, contribute a provider with a small set of thoughtful commands and real e2e tests.
 
 Star the project, open issues or PRs, and join the Tilde community on [Discord](https://discord.gg/jj7sNyCGD4).
-

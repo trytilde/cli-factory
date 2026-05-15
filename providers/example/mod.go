@@ -9,20 +9,17 @@ type Provider struct{}
 
 func New() Provider { return Provider{} }
 
-func (Provider) ID() string   { return "example" }
-func (Provider) Name() string { return "Example" }
-func (Provider) ShortDescription() string {
-	return "Example provider for validating CLI Factory behavior."
+func (Provider) ID() string               { return providerID }
+func (Provider) Name() string             { return providerName }
+func (Provider) ShortDescription() string { return providerShortDescription }
+func (Provider) LongDescription() string  { return providerLongDescription }
+func (Provider) Categories() []string {
+	return append([]string(nil), providerCategories...)
 }
-func (Provider) LongDescription() string {
-	return "The Example provider contains local non-network tools used to validate command routing, discovery, logging, and e2e tests."
+func (Provider) Aliases() []string {
+	return append([]string(nil), providerAliases...)
 }
-func (Provider) Categories() []string { return []string{"example", "debug"} }
-func (Provider) Aliases() []string    { return []string{"sample", "test"} }
 func (Provider) Parameters() []provider.Parameter {
-	return []provider.Parameter{
-		{Name: "base_url", Description: "Optional base URL used by providers that proxy requests.", Required: false},
-		{Name: "bearer_token", Description: "Optional bearer token for providers that need API auth.", Required: false, Secret: true},
-	}
+	return append([]provider.Parameter(nil), providerParameters...)
 }
 func (Provider) Tools() []provider.Tool { return []provider.Tool{echo.Tool{}} }
