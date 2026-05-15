@@ -1,0 +1,6 @@
+creation_rules:
+  - path_regex: (^|/)secrets\.yaml$
+    kms: arn:aws:kms:us-east-1:914788356809:alias/tilde-app-dev-sops
+  - path_regex: (^|/)test_secrets\.yaml$
+    kms: arn:aws:kms:us-east-1:914788356809:alias/tilde-app-dev-sops
+

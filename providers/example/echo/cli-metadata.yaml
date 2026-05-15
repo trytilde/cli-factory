@@ -1,0 +1,16 @@
+id: echo
+name: Echo
+short_description: Echo a message for CLI and e2e validation.
+long_description: |
+  Echo returns the provided message and is intentionally local, deterministic, and safe
+  for CI e2e tests.
+categories:
+  - example
+  - debug
+aliases:
+  - repeat
+  - say
+command_path:
+  - example
+  - echo
+

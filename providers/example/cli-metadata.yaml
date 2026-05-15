@@ -1,0 +1,18 @@
+id: example
+name: Example
+short_description: Example provider for validating CLI Factory behavior.
+long_description: |
+  The Example provider contains local non-network tools used to validate command routing,
+  discovery, invocation logging, docs generation, and e2e tests.
+categories:
+  - example
+  - debug
+aliases:
+  - sample
+  - test
+provider_parameters:
+  - name: base_url
+    description: Optional base URL used by providers that proxy requests.
+  - name: bearer_token
+    description: Optional bearer token for providers that need API auth.
+

@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Verify formatting
+        run: |
+          test -z "$(gofmt -l $(find . -name '*.go' -not -path './.git/*'))"
+
+      - name: Run unit tests
+        run: make test-unit
+
+      - name: Run provider e2e tests
+        run: make test-e2e
+
+      - name: Generate docs and catalog
+        run: |
+          make generate-docs
+          make generate-catalog
+
+      - name: Build factory
+        run: make build
+
+      - name: Build all static targets
+        run: make build-all

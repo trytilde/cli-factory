@@ -1,0 +1,8 @@
+documentation_urls: []
+openapi_urls: []
+graphql_urls: []
+oss_repositories: []
+example_urls: []
+notes:
+  - Local provider used for deterministic framework validation.
+

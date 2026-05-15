@@ -1,0 +1,9 @@
+.tmp/
+dist/
+.env.secrets
+secrets.yaml
+
+# Provider e2e test secrets. Plaintext files are local only; encrypted
+# test_secrets.enc.yaml files are intended to be committed.
+providers/**/test_secrets.yaml
+providers/**/override_test_secrets.yaml

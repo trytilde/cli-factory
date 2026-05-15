@@ -1,0 +1,89 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "CHANGELOG.md"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      release-url: ${{ steps.release.outputs.release-url }}
+      skipped: ${{ steps.release.outputs.skipped }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GIT_BOT_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Create release
+        id: release
+        uses: trytilde/public-github-actions/changie-release@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  build:
+    needs: release
+    if: needs.release.outputs.skipped != 'true'
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            artifact: factory-linux-amd64
+          - goos: linux
+            goarch: arm64
+            artifact: factory-linux-arm64
+          - goos: darwin
+            goarch: amd64
+            artifact: factory-darwin-amd64
+          - goos: darwin
+            goarch: arm64
+            artifact: factory-darwin-arm64
+          - goos: windows
+            goarch: amd64
+            artifact: factory-windows-amd64.exe
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release.outputs.version }}
+          persist-credentials: false
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: "0"
+        run: |
+          mkdir -p dist
+          go build -trimpath -ldflags="-s -w" -o "dist/${{ matrix.artifact }}" ./cmd/factory
+          tar -C dist -czf "dist/${{ matrix.artifact }}.tar.gz" "${{ matrix.artifact }}"
+
+      - name: Upload artifact to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ needs.release.outputs.version }}" \
+            "dist/${{ matrix.artifact }}.tar.gz" \
+            --clobber
+

@@ -1,0 +1,19 @@
+{
+  "items": [
+    {
+      "id": "example.echo",
+      "provider_id": "example",
+      "command_path": [
+        "example",
+        "echo"
+      ],
+      "name": "Echo",
+      "description": "Echo a message for CLI and e2e validation.",
+      "categories": [
+        "example",
+        "debug"
+      ],
+      "search_document": "example Example echo Echo Echo a message for CLI and e2e validation. Echo returns the provided message and is intentionally local, deterministic, and safe for CI e2e tests. example debug repeat say"
+    }
+  ]
+}
