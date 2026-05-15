@@ -201,7 +201,7 @@ func (a App) invokeTool(ctx context.Context, flags globalFlags, original []strin
 	if err := validateRequired(rt.Tool.InputSchema(), req.Params); err != nil {
 		return a.finish(ctx, flags, original, providerToolIDs(providerID, toolID), nil, errObj("validation_failed", err.Error(), false), 2)
 	}
-	rec, err := invocationlog.New(flags.LogDir, original)
+	rec, err := invocationlog.New(flags.LogDir, redactProviderSecrets(rt.Provider, original))
 	if err != nil {
 		fmt.Fprintln(a.Stderr, err)
 		return 1
@@ -389,4 +389,54 @@ func asProviderError(err error) *provider.Error {
 
 func providerToolIDs(providerID, toolID string) []string {
 	return []string{providerID, toolID}
+}
+
+func redactProviderSecrets(p provider.Provider, args []string) []string {
+	if p == nil {
+		return append([]string(nil), args...)
+	}
+	secrets := map[string]bool{}
+	for _, param := range p.Parameters() {
+		if param.Secret {
+			secrets[param.Name] = true
+			secrets[strings.ReplaceAll(param.Name, "_", "-")] = true
+		}
+	}
+	if len(secrets) == 0 {
+		return append([]string(nil), args...)
+	}
+	out := append([]string(nil), args...)
+	for i := 0; i < len(out); i++ {
+		name := strings.TrimPrefix(out[i], "--")
+		switch name {
+		case "provider-params-json":
+			if i+1 < len(out) {
+				out[i+1] = redactProviderParamsJSON(out[i+1], secrets)
+				i++
+			}
+		default:
+			if strings.HasPrefix(out[i], "--") && secrets[name] && i+1 < len(out) {
+				out[i+1] = "[REDACTED]"
+				i++
+			}
+		}
+	}
+	return out
+}
+
+func redactProviderParamsJSON(value string, secrets map[string]bool) string {
+	params := map[string]any{}
+	if err := json.Unmarshal([]byte(value), &params); err != nil {
+		return "[REDACTED_PROVIDER_PARAMS]"
+	}
+	for name := range params {
+		if secrets[name] || secrets[strings.ReplaceAll(name, "_", "-")] {
+			params[name] = "[REDACTED]"
+		}
+	}
+	data, err := json.Marshal(params)
+	if err != nil {
+		return "[REDACTED_PROVIDER_PARAMS]"
+	}
+	return string(data)
 }

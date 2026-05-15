@@ -1,0 +1,16 @@
+id: calendar-check
+name: Calendar Check
+short_description: Search Google Calendar events.
+long_description: |
+  List or search Google Calendar events in a time window on the configured
+  calendar.
+categories:
+  - calendar
+  - scheduling
+  - search
+aliases:
+  - check-events
+  - list-events
+command_path:
+  - google-workspace
+  - calendar-check

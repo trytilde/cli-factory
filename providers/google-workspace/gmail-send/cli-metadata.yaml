@@ -1,0 +1,15 @@
+id: gmail-send
+name: Gmail Send
+short_description: Send a Gmail message from a Google Workspace account.
+long_description: |
+  Send a plain-text Gmail message through the Gmail API using OAuth-backed
+  Google Workspace credentials.
+categories:
+  - email
+  - gmail
+aliases:
+  - send-email
+  - email
+command_path:
+  - google-workspace
+  - gmail-send
