@@ -14,6 +14,68 @@
         "debug"
       ],
       "search_document": "example Example echo Echo Echo a message for CLI and e2e validation. Echo returns the provided message and is intentionally local, deterministic, and safe for CI e2e tests. example debug repeat say"
+    },
+    {
+      "id": "google-workspace.calendar-check",
+      "provider_id": "google-workspace",
+      "command_path": [
+        "google-workspace",
+        "calendar-check"
+      ],
+      "name": "Calendar Check",
+      "description": "Search Google Calendar events.",
+      "categories": [
+        "calendar",
+        "scheduling",
+        "search"
+      ],
+      "search_document": "google-workspace Google Workspace calendar-check Calendar Check Search Google Calendar events. List or search Google Calendar events in a time window on the configured calendar. calendar scheduling search check-events list-events"
+    },
+    {
+      "id": "google-workspace.calendar-create",
+      "provider_id": "google-workspace",
+      "command_path": [
+        "google-workspace",
+        "calendar-create"
+      ],
+      "name": "Calendar Create",
+      "description": "Create a Google Calendar event.",
+      "categories": [
+        "calendar",
+        "scheduling"
+      ],
+      "search_document": "google-workspace Google Workspace calendar-create Calendar Create Create a Google Calendar event. Create a Google Calendar event on the configured calendar and return compact event details. calendar scheduling create-event schedule"
+    },
+    {
+      "id": "google-workspace.gmail-check",
+      "provider_id": "google-workspace",
+      "command_path": [
+        "google-workspace",
+        "gmail-check"
+      ],
+      "name": "Gmail Check",
+      "description": "Search recent Gmail messages.",
+      "categories": [
+        "email",
+        "gmail",
+        "search"
+      ],
+      "search_document": "google-workspace Google Workspace gmail-check Gmail Check Search recent Gmail messages. Search or list Gmail messages for the authenticated Google Workspace user and return compact message details. email gmail search check-email search-email"
+    },
+    {
+      "id": "google-workspace.gmail-send",
+      "provider_id": "google-workspace",
+      "command_path": [
+        "google-workspace",
+        "gmail-send"
+      ],
+      "name": "Gmail Send",
+      "description": "Send a Gmail message from a Google Workspace account.",
+      "categories": [
+        "email",
+        "gmail"
+      ],
+      "search_document": "google-workspace Google Workspace gmail-send Gmail Send Send a Gmail message from a Google Workspace account. Send a plain-text Gmail message through the Gmail API using OAuth-backed Google Workspace credentials. email gmail send-email email"
     }
   ]
 }

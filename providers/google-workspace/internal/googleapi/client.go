@@ -217,6 +217,7 @@ func (c *Client) accessToken(ctx context.Context) (string, error) {
 	form.Set("client_secret", c.Config.ClientSecret)
 	form.Set("refresh_token", c.Config.RefreshToken)
 	form.Set("grant_type", "refresh_token")
+	form.Set("scope", "https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/calendar.events")
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, tokenURL, strings.NewReader(form.Encode()))
 	if err != nil {
 		return "", err
