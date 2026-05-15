@@ -78,7 +78,11 @@ func (s Secrets) Client(t *testing.T) *googleapi.Client {
 
 func RunFactory(t *testing.T, args ...string) invocationlog.Log {
 	t.Helper()
-	logDir := t.TempDir()
+	logDir, err := os.MkdirTemp("", "cli-factory-google-workspace-e2e-*")
+	if err != nil {
+		t.Fatalf("create e2e log dir: %v", err)
+	}
+	t.Logf("factory invocation logs: %s", logDir)
 	fullArgs := append([]string{"run", "./cmd/factory", "--log-dir", logDir}, args...)
 	cmd := exec.Command("go", fullArgs...)
 	cmd.Dir = RepoRoot(t)
@@ -132,7 +136,7 @@ func RepoRoot(t *testing.T) string {
 	}
 	dir := filepath.Dir(file)
 	for {
-		if filepath.Base(dir) == "cli-factory" {
+		if fileExists(filepath.Join(dir, "go.mod")) {
 			return dir
 		}
 		parent := filepath.Dir(dir)
@@ -141,6 +145,11 @@ func RepoRoot(t *testing.T) string {
 		}
 		dir = parent
 	}
+}
+
+func fileExists(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && !info.IsDir()
 }
 
 func logPathFromOutput(t *testing.T, output string) string {

@@ -157,13 +157,24 @@ func (a App) runInvoke(ctx context.Context, flags globalFlags, original, args []
 func (a App) runProviderTool(ctx context.Context, flags globalFlags, original []string, providerID, toolID string, args []string) int {
 	params := map[string]any{}
 	providerParams := map[string]any{}
+	var paramsJSON, providerParamsJSON string
 	for i := 0; i < len(args); i++ {
 		if !strings.HasPrefix(args[i], "--") {
 			continue
 		}
 		name := strings.TrimPrefix(args[i], "--")
-		if name == "provider-params-json" || name == "params-json" {
-			i++
+		if name == "provider-params-json" {
+			if i+1 < len(args) {
+				i++
+				providerParamsJSON = args[i]
+			}
+			continue
+		}
+		if name == "params-json" {
+			if i+1 < len(args) {
+				i++
+				paramsJSON = args[i]
+			}
 			continue
 		}
 		value := "true"
@@ -177,9 +188,15 @@ func (a App) runProviderTool(ctx context.Context, flags globalFlags, original []
 			params[strings.ReplaceAll(name, "-", "_")] = value
 		}
 	}
-	pp, _ := json.Marshal(providerParams)
-	p, _ := json.Marshal(params)
-	return a.invokeTool(ctx, flags, original, providerID, toolID, string(pp), string(p))
+	if providerParamsJSON == "" {
+		pp, _ := json.Marshal(providerParams)
+		providerParamsJSON = string(pp)
+	}
+	if paramsJSON == "" {
+		p, _ := json.Marshal(params)
+		paramsJSON = string(p)
+	}
+	return a.invokeTool(ctx, flags, original, providerID, toolID, providerParamsJSON, paramsJSON)
 }
 
 func (a App) invokeTool(ctx context.Context, flags globalFlags, original []string, providerID, toolID, providerParamsJSON, paramsJSON string) int {

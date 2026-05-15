@@ -2,10 +2,10 @@ package googleworkspace
 
 import (
 	"cli-factory/internal/provider"
-	"cli-factory/providers/google-workspace/calendarcheck"
-	"cli-factory/providers/google-workspace/calendarcreate"
-	"cli-factory/providers/google-workspace/gmailcheck"
-	"cli-factory/providers/google-workspace/gmailsend"
+	calendarcheck "cli-factory/providers/google-workspace/calendar-check"
+	calendarcreate "cli-factory/providers/google-workspace/calendar-create"
+	gmailcheck "cli-factory/providers/google-workspace/gmail-check"
+	gmailsend "cli-factory/providers/google-workspace/gmail-send"
 )
 
 type Provider struct{}
