@@ -389,6 +389,12 @@ testing:
     calendar_id: primary
 implementation:
   notes:
+    - "Run 2 retried gmail-send after Gmail API enablement. The CLI/provider
+      send path succeeded and returned Gmail message_id 19e2c0d9a2196308 with
+      redacted provider params in the invocation log."
+    - "Run 2 verification failed when listing Gmail by query: Google returned
+      'Metadata scope does not support q parameter', which indicates the saved
+      refresh token does not include gmail.modify/read-capable access."
     - "Run 1 fixed e2e repo-root detection to locate go.mod instead of the
       parent cli-factory directory."
     - "Run 1 fixed direct provider-tool CLI handling so --params-json and
@@ -398,9 +404,11 @@ implementation:
       directories."
     - "Targeted real e2e reached the Gmail API. Invocation logs redacted
       client_id, client_secret, and refresh_token in provider params."
-  last_failure: "Targeted gmail-send e2e is blocked by external Google Cloud
-    project state: Gmail API is disabled for project 68290622560, returning 403
-    permission_denied."
-  next_action: "Enable Gmail API for Google Cloud project 68290622560, wait for
-    propagation, then rerun GOCACHE=/tmp/go-cache make test-provider-tool
-    PROVIDER=google-workspace TOOL=gmail-send."
+  last_failure: "Targeted gmail-send e2e now sends successfully, but Gmail
+    search/check and cleanup are blocked by insufficient refresh-token scopes:
+    Google reports 'Metadata scope does not support q parameter'."
+  next_action: "Regenerate and save providers/google-workspace/override_test_secrets.yaml
+    with a refresh token authorized for https://www.googleapis.com/auth/gmail.modify,
+    https://www.googleapis.com/auth/gmail.send, and
+    https://www.googleapis.com/auth/calendar.events; then rerun GOCACHE=/tmp/go-cache
+    make test-provider-tool PROVIDER=google-workspace TOOL=gmail-send."
