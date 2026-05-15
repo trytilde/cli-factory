@@ -1,0 +1,25 @@
+type: object
+properties:
+  result_count:
+    type: integer
+  next_page_token:
+    type: string
+  events:
+    type: array
+    items:
+      type: object
+      properties:
+        event_id:
+          type: string
+        summary:
+          type: string
+        status:
+          type: string
+        html_link:
+          type: string
+        start:
+          type: string
+        end:
+          type: string
+        location:
+          type: string

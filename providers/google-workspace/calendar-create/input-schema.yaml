@@ -1,0 +1,35 @@
+type: object
+required:
+  - summary
+  - start
+  - end
+properties:
+  summary:
+    type: string
+    minLength: 1
+  start:
+    type: string
+    format: date-time
+    description: RFC3339 start timestamp.
+  end:
+    type: string
+    format: date-time
+    description: RFC3339 end timestamp.
+  time_zone:
+    type: string
+    description: Optional IANA time zone.
+  description:
+    type: string
+  location:
+    type: string
+  attendees:
+    type: array
+    items:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+        display_name:
+          type: string

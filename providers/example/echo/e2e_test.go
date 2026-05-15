@@ -1,6 +1,7 @@
 package echo_test
 
 import (
+	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -33,7 +34,7 @@ func repoRoot(t *testing.T) string {
 	}
 	dir := filepath.Dir(file)
 	for {
-		if filepath.Base(dir) == "cli-factory" {
+		if fileExists(filepath.Join(dir, "go.mod")) {
 			return dir
 		}
 		parent := filepath.Dir(dir)
@@ -42,4 +43,9 @@ func repoRoot(t *testing.T) string {
 		}
 		dir = parent
 	}
+}
+
+func fileExists(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && !info.IsDir()
 }

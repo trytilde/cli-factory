@@ -1,0 +1,406 @@
+discovery:
+  provider_goal: "Add a Google Workspace provider exposing curated agent-facing
+    Gmail and Google Calendar workflows for the bot@trytilde.ai Workspace test
+    user: send/check Gmail messages and create/check Calendar events using real
+    Google Workspace API behavior."
+  tool_goals:
+    gmail-send: Send a Gmail message from bot@trytilde.ai to itself in e2e tests,
+      returning Gmail message identifiers and delivery metadata where available.
+    gmail-check: Search or list Gmail messages for bot@trytilde.ai using high-level
+      filters such as query, sender, subject, label, and max results; e2e should
+      find the test message created by gmail-send.
+    calendar-create: Create a Google Calendar event on bot@trytilde.ai's primary
+      calendar, returning event identifiers, links, times, attendees, and
+      status; e2e cleanup may delete created events.
+    calendar-check: Search or list Google Calendar events on bot@trytilde.ai's
+      primary calendar within a time window, with query/max-results
+      pagination-aware behavior; e2e should find the test event created by
+      calendar-create.
+  references:
+    - url: https://developers.google.com/workspace/guides/auth-overview
+      title: Google Workspace authentication and authorization overview
+      kind: auth
+      source: external
+      summary: Official Google Workspace overview for choosing OAuth/user
+        authorization or service-account/delegated access patterns.
+      confirmed: true
+    - url: https://developers.google.com/workspace/guides/create-credentials
+      title: Create access credentials for Google Workspace APIs
+      kind: auth
+      source: external
+      summary: Official guidance for creating OAuth clients, service accounts, and API
+        credentials in Google Cloud.
+      confirmed: true
+    - url: https://developers.google.com/identity/protocols/oauth2/web-server
+      title: OAuth 2.0 for Web Server Applications
+      kind: auth
+      source: external
+      summary: Official OAuth flow reference relevant to obtaining durable refresh
+        tokens for e2e tests.
+      confirmed: true
+    - url: https://support.google.com/a/answer/162106?hl=en-EN
+      title: Domain-wide delegation control
+      kind: auth
+      source: external
+      summary: Admin-side domain-wide delegation reference for service accounts
+        impersonating Workspace users when available.
+      confirmed: true
+    - url: https://developers.google.com/workspace/gmail/api/guides/sending
+      title: Gmail API create and send email messages
+      kind: api_usage
+      source: external
+      summary: Explains direct message sending via messages.send and MIME/base64url
+        message construction.
+      confirmed: true
+    - url: https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.messages/send
+      title: Gmail users.messages.send reference
+      kind: api_usage
+      source: external
+      summary: REST reference for sending a message through Gmail API.
+      confirmed: true
+    - url: https://developers.google.com/workspace/gmail/api/guides/list-messages
+      title: Gmail list messages guide
+      kind: api_usage
+      source: external
+      summary: Guide for listing and filtering Gmail messages.
+      confirmed: true
+    - url: https://developers.google.cn/calendar/api/guides/create-events?hl=en
+      title: Google Calendar create events guide
+      kind: api_usage
+      source: external
+      summary: Official guide for creating Calendar events and representing event
+        time/attendee fields.
+      confirmed: true
+    - url: https://developers.google.com/workspace/calendar/api/v3/reference/events/insert
+      title: Calendar events.insert reference
+      kind: api_usage
+      source: external
+      summary: REST reference for creating an event in a calendar.
+      confirmed: true
+    - url: https://developers.google.com/workspace/calendar/api/v3/reference/events/list
+      title: Calendar events.list reference
+      kind: api_usage
+      source: external
+      summary: REST reference for listing events, including time bounds, query,
+        maxResults, pageToken, nextPageToken, and scopes.
+      confirmed: true
+    - url: https://piumal1999.medium.com/displaying-a-list-of-events-using-google-calendar-api-c785a713749a
+      title: "Medium example: displaying Calendar events"
+      kind: general
+      source: user
+      summary: User-provided secondary example showing Calendar events listing for a
+        public calendar/API-key style scenario.
+      confirmed: true
+    - url: repo://skills/add-provider/SKILL.md
+      title: CLI Factory add-provider workflow
+      kind: general
+      source: external
+      summary: Local workflow defining provider layout, metadata, docs/catalog
+        generation, e2e safety, and secret handling.
+      confirmed: true
+    - url: repo://providers/example/echo
+      title: CLI Factory example provider
+      kind: general
+      source: external
+      summary: Local provider/tool implementation and CLI e2e pattern.
+      confirmed: true
+  discovery_notes:
+    - Provider id confirmed as google-workspace.
+    - "Curated tools confirmed: gmail-send, gmail-check, calendar-create,
+      calendar-check."
+    - "Target e2e Workspace user confirmed: bot@trytilde.ai."
+    - "Calendar e2e target confirmed: primary calendar for bot@trytilde.ai."
+    - "E2E writes allowed against bot@trytilde.ai: Gmail may email itself;
+      Calendar may modify this account's primary calendar."
+    - "Preferred auth model: OAuth client + durable refresh token for
+      bot@trytilde.ai."
+    - Gmail send and Calendar create are write operations; Gmail check and
+      Calendar check are read operations.
+    - "Calendar cleanup confirmed: e2e tests may delete calendar events they
+      create."
+    - "Gmail cleanup confirmed: e2e tests should trash/delete test messages
+      after assertions."
+    - "Spend/rate-limit constraint confirmed: no paid Google API usage expected;
+      keep full e2e run under 10 Gmail sends and under 10 Calendar writes."
+    - "Credentials expected through secure secret collection: OAuth client ID,
+      OAuth client secret, refresh token, test user email, and calendar ID."
+plan:
+  provider_plan: "Create providers/google-workspace with provider metadata,
+    generator metadata/prompt, test secret examples, and four curated tools:
+    gmail-send, gmail-check, calendar-create, calendar-check. Register
+    google-workspace in internal/app/registry.go alongside the example provider.
+    Implement a shared Google Workspace client in the provider package using
+    net/http and encoding/json rather than adding a Google SDK dependency: read
+    provider params client_id, client_secret, refresh_token, optional user_id
+    defaulting to me, and optional calendar_id defaulting to primary; exchange
+    refresh_token at Google's OAuth token endpoint for an access token; attach
+    Authorization: Bearer to Gmail and Calendar API calls; normalize Google API
+    errors into provider.Error with retryable flags for 429/5xx. Keep tool
+    implementations high-level and workflow-oriented rather than raw CRUD
+    wrappers. Generate docs/catalog from metadata and schemas after
+    implementation. E2e tests use bot@trytilde.ai, primary calendar, real OAuth
+    refresh-token credentials, and stay under 10 Gmail sends and 10 Calendar
+    writes per full run. Gmail tests send to the same account, verify via
+    search, then trash/delete test messages. Calendar tests create a unique
+    event, verify via list/search, then delete the created event for cleanup."
+  tool_plans:
+    - toolId: gmail-send
+      goal: Send a Gmail message from the authenticated Workspace user, used by e2e to
+        email bot@trytilde.ai to itself with a unique subject.
+      implementation: Build an RFC 2822/MIME text message from
+        to/cc/bcc/subject/body_text, base64url encode it without padding, POST
+        to /gmail/v1/users/{user_id}/messages/send, and return Gmail identifiers
+        and labels. Validate at least one recipient, subject, and body_text. Use
+        Gmail API sending guide and users.messages.send reference.
+      inputSchema: |-
+        type: object
+        required: [to, subject, body_text]
+        properties:
+          to:
+            type: array
+            items: { type: string }
+            minItems: 1
+            description: Recipient email addresses.
+          cc:
+            type: array
+            items: { type: string }
+            description: Optional CC recipients.
+          bcc:
+            type: array
+            items: { type: string }
+            description: Optional BCC recipients.
+          subject:
+            type: string
+            minLength: 1
+          body_text:
+            type: string
+            minLength: 1
+      outputSchema: |-
+        type: object
+        properties:
+          message_id: { type: string }
+          thread_id: { type: string }
+          label_ids:
+            type: array
+            items: { type: string }
+    - toolId: gmail-check
+      goal: Search or list Gmail messages for the authenticated Workspace user, used
+        by e2e to verify the message sent by gmail-send.
+      implementation: GET /gmail/v1/users/{user_id}/messages with q and maxResults,
+        then optionally fetch message details for snippet/labels via
+        /messages/{id}. Return compact message results and count. Use Gmail list
+        messages guide. This remains a high-level check/search tool rather than
+        exposing arbitrary Gmail CRUD.
+      inputSchema: >-
+        type: object
+
+        properties:
+          query:
+            type: string
+            description: Gmail search query, for example subject:"cli-factory-e2e".
+          max_results:
+            type: integer
+            minimum: 1
+            maximum: 25
+            default: 10
+          include_snippet:
+            type: boolean
+            default: true
+      outputSchema: |-
+        type: object
+        properties:
+          result_count: { type: integer }
+          messages:
+            type: array
+            items:
+              type: object
+              properties:
+                id: { type: string }
+                thread_id: { type: string }
+                snippet: { type: string }
+                label_ids:
+                  type: array
+                  items: { type: string }
+    - toolId: calendar-create
+      goal: Create a Google Calendar event on bot@trytilde.ai's primary calendar,
+        returning event details and enabling e2e cleanup by event id.
+      implementation: POST /calendar/v3/calendars/{calendar_id}/events with summary,
+        start, end, optional description/location/attendees/time_zone. Represent
+        date-time values as RFC3339 dateTime fields with optional timeZone.
+        Return the created event id, htmlLink, status, start/end, and attendees.
+        Use Calendar create events guide and events.insert reference.
+      inputSchema: |-
+        type: object
+        required: [summary, start, end]
+        properties:
+          summary:
+            type: string
+            minLength: 1
+          start:
+            type: string
+            format: date-time
+            description: RFC3339 start timestamp.
+          end:
+            type: string
+            format: date-time
+            description: RFC3339 end timestamp.
+          time_zone:
+            type: string
+            description: Optional IANA time zone, for example Europe/Berlin.
+          description:
+            type: string
+          location:
+            type: string
+          attendees:
+            type: array
+            items:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string }
+                display_name: { type: string }
+      outputSchema: |-
+        type: object
+        properties:
+          event_id: { type: string }
+          html_link: { type: string }
+          status: { type: string }
+          summary: { type: string }
+          start: { type: string }
+          end: { type: string }
+          attendees:
+            type: array
+            items:
+              type: object
+              properties:
+                email: { type: string }
+                response_status: { type: string }
+    - toolId: calendar-check
+      goal: Search/list Calendar events on bot@trytilde.ai's primary calendar within a
+        time window, used by e2e to verify calendar-create.
+      implementation: GET /calendar/v3/calendars/{calendar_id}/events with timeMin,
+        timeMax, q, maxResults, singleEvents, and orderBy=startTime when
+        singleEvents is true. Return compact event results, count, and
+        nextPageToken when present. Use Calendar events.list reference.
+      inputSchema: |-
+        type: object
+        required: [time_min, time_max]
+        properties:
+          time_min:
+            type: string
+            format: date-time
+          time_max:
+            type: string
+            format: date-time
+          query:
+            type: string
+          max_results:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+          single_events:
+            type: boolean
+            default: true
+      outputSchema: |-
+        type: object
+        properties:
+          result_count: { type: integer }
+          next_page_token: { type: string }
+          events:
+            type: array
+            items:
+              type: object
+              properties:
+                event_id: { type: string }
+                summary: { type: string }
+                status: { type: string }
+                html_link: { type: string }
+                start: { type: string }
+                end: { type: string }
+                location: { type: string }
+testing:
+  testing_plan: "Use real Google Workspace e2e tests against bot@trytilde.ai.
+    Secrets are supplied via
+    providers/google-workspace/override_test_secrets.yaml during local harness
+    work, with OAuth client credentials and a durable refresh token authorized
+    by bot@trytilde.ai. Required scopes:
+    https://www.googleapis.com/auth/gmail.modify,
+    https://www.googleapis.com/auth/gmail.send, and
+    https://www.googleapis.com/auth/calendar.events. Tests must stay under the
+    confirmed cap of 10 Gmail sends and 10 Calendar writes per full e2e run. No
+    mock-backed e2e tests are acceptable. Write tests first in the provider/tool
+    directories, then implement until targeted e2e tests pass or an external
+    credential/account blocker is hit."
+  e2e_tests:
+    - id: gmail_send_check_cleanup
+      description: Send a unique email from bot@trytilde.ai to itself using
+        gmail-send, verify it is discoverable with gmail-check by unique
+        subject, then trash/delete matching test messages for cleanup.
+      command: make test-provider-tool PROVIDER=google-workspace TOOL=gmail-send &&
+        make test-provider-tool PROVIDER=google-workspace TOOL=gmail-check
+      mode: real_account
+      assertions:
+        - gmail-send returns SUCCESS and a non-empty message_id/thread_id.
+        - gmail-check returns SUCCESS and finds at least one message matching
+          the unique subject.
+        - Created Gmail test messages are trashed/deleted after assertions.
+        - The flow sends at most one email per test invocation.
+      cleanup: Trash/delete Gmail test messages matching the generated e2e subject
+        after assertions.
+      destructive_risk: low
+    - id: calendar_create_check_cleanup
+      description: Create a unique event on bot@trytilde.ai's primary calendar using
+        calendar-create, verify it is discoverable with calendar-check by
+        query/time window, then delete the created event for cleanup.
+      command: make test-provider-tool PROVIDER=google-workspace TOOL=calendar-create
+        && make test-provider-tool PROVIDER=google-workspace TOOL=calendar-check
+      mode: real_account
+      assertions:
+        - calendar-create returns SUCCESS and a non-empty
+          event_id/html_link/status.
+        - calendar-check returns SUCCESS and finds the unique event in the
+          expected time window.
+        - Created Calendar test events are deleted after assertions.
+        - The flow creates at most one calendar event per test invocation.
+      cleanup: Delete Calendar events created by the e2e test using their returned
+        event IDs.
+      destructive_risk: low
+    - id: google_workspace_provider_e2e
+      description: Run all Google Workspace provider e2e tests together after
+        individual tool flows pass, preserving the write cap and cleanup
+        behavior.
+      command: make test-provider PROVIDER=google-workspace
+      mode: real_account
+      assertions:
+        - All provider e2e tests pass against real Google Workspace APIs.
+        - Full provider e2e run stays under 10 Gmail sends and 10 Calendar
+          writes.
+        - No secrets are printed in command output or invocation logs.
+      cleanup: All Gmail messages and Calendar events created by tests are cleaned up
+        by test code.
+      destructive_risk: low
+  override_test_secrets_shape:
+    client_id: Google OAuth 2.0 client ID authorized by bot@trytilde.ai
+    client_secret: Google OAuth 2.0 client secret for the same OAuth client
+    refresh_token: Durable refresh token granted by bot@trytilde.ai with Gmail
+      modify/send and Calendar events scopes
+    test_user_email: bot@trytilde.ai
+    calendar_id: primary
+implementation:
+  notes:
+    - Run 3 saved the regenerated refresh token locally, patched OAuth refresh
+      to request the narrower access-token subset gmail.modify, gmail.send, and
+      calendar.events so Gmail query search is not blocked by the token also
+      having gmail.metadata.
+    - Run 3 targeted e2e passed for gmail-send, gmail-check, calendar-create,
+      calendar-check, and make test-provider PROVIDER=google-workspace.
+    - "Run 3 broad checks passed: make test-unit, make test-e2e, make
+      generate-docs, make generate-catalog, and make build."
+    - Run 3 fixed the pre-existing example provider e2e repo-root helper to
+      locate go.mod, allowing make test-e2e to pass in this workspace layout.
+  last_failure: No provider/test failure remains after run 3. The only remaining
+    blocker is Git push from this clone, which still fails because the local
+    repository has missing blobs unrelated to the provider changes.
+  next_action: Repair or reclone the Git repository before pushing the local
+    branch/tags, or apply the local commits from this branch in a healthy clone.

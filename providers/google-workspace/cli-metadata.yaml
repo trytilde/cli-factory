@@ -1,0 +1,23 @@
+id: google-workspace
+name: Google Workspace
+short_description: Use Gmail and Google Calendar from a Google Workspace account.
+long_description: |
+  Google Workspace exposes curated Gmail and Google Calendar workflows for agents:
+  send and check email, and create and check calendar events with OAuth-backed API access.
+categories:
+  - email
+  - calendar
+  - productivity
+aliases:
+  - google
+  - gmail
+  - calendar
+provider_parameters:
+  - name: access_token
+    description: Google OAuth 2.0 access token with Gmail and Calendar scopes.
+    required: true
+    secret: true
+  - name: user_id
+    description: Gmail user identifier. Defaults to me.
+  - name: calendar_id
+    description: Google Calendar ID. Defaults to primary.

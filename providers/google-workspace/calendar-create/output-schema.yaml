@@ -1,0 +1,23 @@
+type: object
+properties:
+  event_id:
+    type: string
+  html_link:
+    type: string
+  status:
+    type: string
+  summary:
+    type: string
+  start:
+    type: string
+  end:
+    type: string
+  attendees:
+    type: array
+    items:
+      type: object
+      properties:
+        email:
+          type: string
+        response_status:
+          type: string
