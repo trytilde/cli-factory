@@ -6,7 +6,7 @@ CATALOG_EMBEDDING_MODEL ?= text-embedding-3-small
 CATALOG_EMBEDDING_DIMENSIONS ?= 768
 DOCS_REPO_DIR ?= docs
 
-.PHONY: test test-unit test-e2e test-provider test-provider-tool ensure-docs-submodule generate-metadata generate-docs generate-catalog build build-all sops-encrypt sops-decrypt sops-encrypt-provider-test-secrets help
+.PHONY: test test-unit test-e2e test-provider test-provider-tool ensure-docs-submodule generate-metadata generate-docs generate-catalog generate-catalog-provider generate-catalog-tool build build-all sops-encrypt sops-decrypt env-secrets sops-encrypt-provider-test-secrets help
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-38s %s\n", $$1, $$2}'
@@ -37,8 +37,17 @@ generate-metadata: ## Generate static Go metadata/schema files from provider YAM
 generate-docs: generate-metadata ensure-docs-submodule ## Generate Mintlify provider/tool docs from metadata
 	go run ./tools/generatedocs --docs-root $(DOCS_REPO_DIR)
 
-generate-catalog: generate-metadata ## Generate embedded tool catalogue and embeddings when OPENAI_API_KEY is available
-	@set -a; [ -f .env.secrets ] && . ./.env.secrets; set +a; go run ./tools/embedcatalog --model $(CATALOG_EMBEDDING_MODEL) --dimensions $(CATALOG_EMBEDDING_DIMENSIONS)
+generate-catalog: generate-metadata ## Generate embedded catalogue files for all tools
+	@set -a; [ -f .env ] && . ./.env; [ -f .env.secrets ] && . ./.env.secrets; set +a; go run ./tools/embedcatalog --model $(CATALOG_EMBEDDING_MODEL) --dimensions $(CATALOG_EMBEDDING_DIMENSIONS)
+
+generate-catalog-provider: generate-metadata ## Generate embedded catalogue files for one provider: make generate-catalog-provider PROVIDER=google
+	@test -n "$(PROVIDER)" || (echo "PROVIDER is required" && exit 2)
+	@set -a; [ -f .env ] && . ./.env; [ -f .env.secrets ] && . ./.env.secrets; set +a; go run ./tools/embedcatalog --model $(CATALOG_EMBEDDING_MODEL) --dimensions $(CATALOG_EMBEDDING_DIMENSIONS) --provider $(PROVIDER)
+
+generate-catalog-tool: generate-metadata ## Generate embedded catalogue files for one tool: make generate-catalog-tool PROVIDER=google TOOL=send-email
+	@test -n "$(PROVIDER)" || (echo "PROVIDER is required" && exit 2)
+	@test -n "$(TOOL)" || (echo "TOOL is required" && exit 2)
+	@set -a; [ -f .env ] && . ./.env; [ -f .env.secrets ] && . ./.env.secrets; set +a; go run ./tools/embedcatalog --model $(CATALOG_EMBEDDING_MODEL) --dimensions $(CATALOG_EMBEDDING_DIMENSIONS) --provider $(PROVIDER) --tool $(TOOL)
 
 build: generate-metadata ## Build local factory binary
 	CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o dist/factory ./cmd/factory
@@ -54,13 +63,19 @@ build-all: generate-metadata ## Build static binaries for Linux, macOS, and Wind
 sops-encrypt: ## Encrypt root secrets.yaml using SOPS + AWS KMS
 	sops encrypt --kms $(SOPS_KMS_ARN) secrets.yaml > secrets.enc.yaml
 
-sops-decrypt: ## Decrypt root secrets.enc.yaml, then generate .env.secrets
+sops-decrypt: ## Decrypt root secrets.enc.yaml to secrets.yaml, then generate .env.secrets
 	@if [ ! -f secrets.yaml ]; then \
 		sops decrypt secrets.enc.yaml > secrets.yaml; \
 	else \
 		echo "secrets.yaml already exists. Not decrypting to prevent overwriting."; \
 	fi
 	./scripts/load-secrets.sh
+
+env-secrets: ## Decrypt local secrets.enc.yaml directly into .env.secrets
+	@tmp="$$(mktemp)"; \
+	trap 'rm -f "$$tmp"' EXIT; \
+	sops decrypt secrets.enc.yaml > "$$tmp"; \
+	./scripts/load-secrets.sh "$$tmp" .env.secrets
 
 sops-encrypt-provider-test-secrets: ## Encrypt provider test secrets: make sops-encrypt-provider-test-secrets PROVIDER=google
 	@test -n "$(PROVIDER)" || (echo "PROVIDER is required" && exit 2)

@@ -54,6 +54,16 @@ func TestDebugPrintsFullOutput(t *testing.T) {
 	}
 }
 
+func TestInvokeAcceptsCommandStyleFlags(t *testing.T) {
+	stdout, stderr, code, _ := run(t, "--debug", "invoke", "example.echo", "--message", "hello")
+	if code != 0 {
+		t.Fatalf("code = %d stderr=%s", code, stderr)
+	}
+	if !strings.Contains(stdout, `"message":"hello"`) {
+		t.Fatalf("stdout missing message: %s", stdout)
+	}
+}
+
 func TestDiscoverShortTool(t *testing.T) {
 	stdout, stderr, code, _ := run(t, "--debug", "discover", "short", "example", "echo")
 	if code != 0 {
@@ -93,6 +103,28 @@ func TestSearchIncludesDiscoverHints(t *testing.T) {
 	}
 }
 
+func TestHelpIncludesGeneratedProviderCommands(t *testing.T) {
+	stdout, stderr, code, _ := run(t, "help")
+	if code != 0 {
+		t.Fatalf("code = %d stderr=%s", code, stderr)
+	}
+	for _, want := range []string{
+		"CLI Factory discovers and invokes curated SaaS/tool provider commands.",
+		"factory search <query>",
+		"google-workspace - Use Gmail and Google Calendar from a Google Workspace account.",
+		"gmail-send - Send a Gmail message from a Google Workspace account.",
+		"example - Example provider for validating CLI Factory behavior.",
+		"echo - Echo a message for CLI and e2e validation.",
+	} {
+		if !strings.Contains(stdout, want) {
+			t.Fatalf("stdout missing %q: %s", want, stdout)
+		}
+	}
+	if strings.Contains(stdout, "full logs at") {
+		t.Fatalf("help should not write invocation log output: %s", stdout)
+	}
+}
+
 func TestMissingRequiredParamFails(t *testing.T) {
 	stdout, stderr, code, _ := run(t, "example", "echo")
 	if code == 0 {
@@ -100,6 +132,44 @@ func TestMissingRequiredParamFails(t *testing.T) {
 	}
 	if !strings.Contains(stdout, "FAILURE") {
 		t.Fatalf("stdout missing FAILURE: %s", stdout)
+	}
+}
+
+func TestMissingRequiredParamsReportsAllMissingFields(t *testing.T) {
+	stdout, stderr, code, _ := run(t, "--debug", "google-workspace", "gmail-send")
+	if code == 0 {
+		t.Fatalf("expected failure stdout=%s stderr=%s", stdout, stderr)
+	}
+	want := "missing required parameters: access_token, body_text, subject, to"
+	if !strings.Contains(stderr, want) {
+		t.Fatalf("stderr missing %q: %s", want, stderr)
+	}
+}
+
+func TestRunLoadsEnvFilesFromCurrentWorkingDirectory(t *testing.T) {
+	dir := t.TempDir()
+	restoreEnv(t, "CLI_FACTORY_ENV_TEST")
+	if err := os.WriteFile(filepath.Join(dir, ".env"), []byte("CLI_FACTORY_ENV_TEST=from-env\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, ".env.secrets"), []byte("CLI_FACTORY_ENV_TEST=from-secrets\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	oldWD, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(oldWD) })
+
+	_, stderr, code, _ := run(t, "--debug", "discover", "short", "example")
+	if code != 0 {
+		t.Fatalf("code = %d stderr=%s", code, stderr)
+	}
+	if got := os.Getenv("CLI_FACTORY_ENV_TEST"); got != "from-secrets" {
+		t.Fatalf("env = %q, want from-secrets", got)
 	}
 }
 
@@ -125,4 +195,17 @@ func runWithEmbedder(t *testing.T, embedder any, args ...string) (string, string
 	}
 	code := a.Run(context.Background(), fullArgs)
 	return stdout.String(), stderr.String(), code, logDir
+}
+
+func restoreEnv(t *testing.T, key string) {
+	t.Helper()
+	old, ok := os.LookupEnv(key)
+	_ = os.Unsetenv(key)
+	t.Cleanup(func() {
+		if ok {
+			_ = os.Setenv(key, old)
+			return
+		}
+		_ = os.Unsetenv(key)
+	})
 }

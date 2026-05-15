@@ -14,6 +14,7 @@ import (
 	"cli-factory/internal/app"
 	"cli-factory/internal/catalog"
 	"cli-factory/internal/openai"
+	"cli-factory/internal/provider"
 )
 
 type toolItem struct {
@@ -41,6 +42,8 @@ type embeddingItem struct {
 func main() {
 	model := "text-embedding-3-small"
 	dimensions := 768
+	providerID := ""
+	toolID := ""
 	for i := 1; i < len(os.Args); i++ {
 		switch os.Args[i] {
 		case "--model":
@@ -57,34 +60,25 @@ func main() {
 				}
 				dimensions = parsed
 			}
+		case "--provider":
+			i++
+			if i < len(os.Args) {
+				providerID = os.Args[i]
+			}
+		case "--tool":
+			i++
+			if i < len(os.Args) {
+				toolID = os.Args[i]
+			}
 		}
 	}
 	registry, err := app.Registry()
 	if err != nil {
 		fail(err)
 	}
-	var tools []toolItem
-	for _, rt := range registry.Tools() {
-		id := rt.Provider.ID() + "." + rt.Tool.ID()
-		doc := strings.Join([]string{
-			rt.Provider.ID(),
-			rt.Provider.Name(),
-			rt.Tool.ID(),
-			rt.Tool.Name(),
-			rt.Tool.ShortDescription(),
-			rt.Tool.LongDescription(),
-			strings.Join(rt.Tool.Categories(), " "),
-			strings.Join(rt.Tool.Aliases(), " "),
-		}, " ")
-		tools = append(tools, toolItem{
-			ID:             id,
-			ProviderID:     rt.Provider.ID(),
-			CommandPath:    []string{rt.Provider.ID(), rt.Tool.ID()},
-			Name:           rt.Tool.Name(),
-			Description:    rt.Tool.ShortDescription(),
-			Categories:     rt.Tool.Categories(),
-			SearchDocument: doc,
-		})
+	tools, err := selectedTools(registry, providerID, toolID)
+	if err != nil {
+		fail(err)
 	}
 	if err := writeJSON(filepath.Join("catalog", "tools.json"), map[string]any{"items": tools}); err != nil {
 		fail(err)
@@ -122,6 +116,55 @@ func main() {
 	if err := writeEmbeddingBinary(filepath.Join("catalog", "embeddings.bin"), tools, vectors, dimensions); err != nil {
 		fail(err)
 	}
+}
+
+func selectedTools(registry *provider.Registry, providerID, toolID string) ([]toolItem, error) {
+	if toolID != "" && providerID == "" {
+		return nil, fmt.Errorf("--tool requires --provider")
+	}
+	if providerID != "" {
+		if _, ok := registry.Provider(providerID); !ok {
+			return nil, fmt.Errorf("provider not found: %s", providerID)
+		}
+	}
+	if toolID != "" {
+		if _, ok := registry.Tool(providerID, toolID); !ok {
+			return nil, fmt.Errorf("tool not found: %s.%s", providerID, toolID)
+		}
+	}
+	var tools []toolItem
+	for _, rt := range registry.Tools() {
+		if providerID != "" && rt.Provider.ID() != providerID {
+			continue
+		}
+		if toolID != "" && rt.Tool.ID() != toolID {
+			continue
+		}
+		id := rt.Provider.ID() + "." + rt.Tool.ID()
+		doc := strings.Join([]string{
+			rt.Provider.ID(),
+			rt.Provider.Name(),
+			rt.Tool.ID(),
+			rt.Tool.Name(),
+			rt.Tool.ShortDescription(),
+			rt.Tool.LongDescription(),
+			strings.Join(rt.Tool.Categories(), " "),
+			strings.Join(rt.Tool.Aliases(), " "),
+		}, " ")
+		tools = append(tools, toolItem{
+			ID:             id,
+			ProviderID:     rt.Provider.ID(),
+			CommandPath:    []string{rt.Provider.ID(), rt.Tool.ID()},
+			Name:           rt.Tool.Name(),
+			Description:    rt.Tool.ShortDescription(),
+			Categories:     rt.Tool.Categories(),
+			SearchDocument: doc,
+		})
+	}
+	if len(tools) == 0 {
+		return nil, fmt.Errorf("no tools selected")
+	}
+	return tools, nil
 }
 
 func writeJSON(path string, value any) error {

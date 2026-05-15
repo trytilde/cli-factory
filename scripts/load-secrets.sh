@@ -13,8 +13,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-SECRETS_FILE="$ROOT_DIR/secrets.yaml"
-ENV_SECRETS="$ROOT_DIR/.env.secrets"
+SECRETS_FILE="${1:-$ROOT_DIR/secrets.yaml}"
+ENV_SECRETS="${2:-$ROOT_DIR/.env.secrets}"
 
 if [[ ! -f "$SECRETS_FILE" ]]; then
     echo "Error: secrets.yaml not found at $SECRETS_FILE"
@@ -40,4 +40,3 @@ for k,v in json.load(sys.stdin).items():
 } > "$ENV_SECRETS"
 
 echo "Written: $ENV_SECRETS"
-

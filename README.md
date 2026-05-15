@@ -153,6 +153,19 @@ Provider rules:
 - Commit only encrypted shared provider secrets as `test_secrets.enc.yaml`.
 - Run `make generate-docs` and `make generate-catalog` after metadata/schema changes.
 
+## Harness-driven provider work
+
+`harness-shop` is included as a submodule for structured provider-building workflows. The Factory CLI provider harness is separate from the generic experiment harness, but reuses shared UI pieces such as chat, runs, diffs, and secrets.
+
+Factory provider harness runs should follow these phases:
+
+- Discovery: confirm provider goals, tool goals, auth model, docs, examples, and reference links.
+- Plan: define provider behavior, each tool, and input/output schemas before implementation.
+- Testing: define real Go e2e tests, required credentials, cleanup behavior, target account/workspace, and rate/spend limits.
+- Implementation: clone CLI Factory into a run-specific checkout, create a `provider-harness/<id>` branch, write provider code and Go e2e tests, then iterate until targeted e2e tests and required checks pass.
+
+The harness secrets form writes `providers/<provider>/override_test_secrets.yaml` for local runs. Shared secrets should be promoted to `test_secrets.yaml`, encrypted with SOPS, and committed as `test_secrets.enc.yaml`.
+
 ## Contribute
 
 CLI Factory is intended to become a shared catalogue of high-quality agent tools. If you want agents to use your SaaS product well, contribute a provider with a small set of thoughtful commands and real e2e tests.

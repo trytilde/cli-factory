@@ -1,5 +1,31 @@
 {
   "model": "text-embedding-3-small",
   "dimension": 768,
-  "items": []
+  "items": [
+    {
+      "id": "example.echo",
+      "offset": 0,
+      "length": 768
+    },
+    {
+      "id": "google-workspace.calendar-check",
+      "offset": 768,
+      "length": 768
+    },
+    {
+      "id": "google-workspace.calendar-create",
+      "offset": 1536,
+      "length": 768
+    },
+    {
+      "id": "google-workspace.gmail-check",
+      "offset": 2304,
+      "length": 768
+    },
+    {
+      "id": "google-workspace.gmail-send",
+      "offset": 3072,
+      "length": 768
+    }
+  ]
 }

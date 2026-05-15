@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"cli-factory/internal/discovery"
+	"cli-factory/internal/envfile"
 	"cli-factory/internal/invocationlog"
 	"cli-factory/internal/openai"
 	"cli-factory/internal/provider"
@@ -41,6 +42,13 @@ func (a App) Run(ctx context.Context, args []string) int {
 	flags, rest, err := parseGlobal(args)
 	if err != nil {
 		return a.finish(ctx, flags, args, nil, nil, errObj("validation_failed", err.Error(), false), 2)
+	}
+	wd, err := os.Getwd()
+	if err != nil {
+		return a.finish(ctx, flags, args, nil, nil, errObj("validation_failed", "get working directory: "+err.Error(), false), 2)
+	}
+	if err := envfile.LoadOptional(wd, ".env", ".env.secrets"); err != nil {
+		return a.finish(ctx, flags, args, nil, nil, errObj("validation_failed", "load env files: "+err.Error(), false), 2)
 	}
 	if !flags.NoLogCleanup {
 		dir := flags.LogDir
@@ -76,6 +84,9 @@ func (a App) dispatch(ctx context.Context, flags globalFlags, original, args []s
 		return a.finish(ctx, flags, original, nil, nil, errObj("validation_failed", "command is required", false), 2)
 	}
 	switch args[0] {
+	case "help", "--help", "-h":
+		a.printHelp()
+		return 0
 	case "search":
 		return a.runSearch(ctx, flags, original, args[1:])
 	case "discover":
@@ -87,6 +98,37 @@ func (a App) dispatch(ctx context.Context, flags globalFlags, original, args []s
 			return a.runProviderTool(ctx, flags, original, args[0], args[1], args[2:])
 		}
 		return a.finish(ctx, flags, original, nil, nil, errObj("validation_failed", "unknown command", false), 2)
+	}
+}
+
+func (a App) printHelp() {
+	fmt.Fprintln(a.Stdout, "CLI Factory discovers and invokes curated SaaS/tool provider commands.")
+	fmt.Fprintln(a.Stdout)
+	fmt.Fprintln(a.Stdout, "Usage:")
+	fmt.Fprintln(a.Stdout, "  factory search <query>")
+	fmt.Fprintln(a.Stdout, "  factory discover short|long <provider> [tool]")
+	fmt.Fprintln(a.Stdout, "  factory invoke <provider.tool> [--provider-params-json JSON] [--params-json JSON]")
+	fmt.Fprintln(a.Stdout, "  factory <provider> <tool> [--param value] [--provider-param value]")
+	fmt.Fprintln(a.Stdout, "  factory help")
+	fmt.Fprintln(a.Stdout)
+	fmt.Fprintln(a.Stdout, "Global flags:")
+	fmt.Fprintln(a.Stdout, "  --debug            Print full result or error JSON")
+	fmt.Fprintln(a.Stdout, "  --log-dir <path>   Write invocation logs to a custom directory")
+	fmt.Fprintln(a.Stdout, "  --openai-api-key   API key for semantic search embeddings")
+	fmt.Fprintln(a.Stdout)
+	fmt.Fprintln(a.Stdout, "Commands:")
+	fmt.Fprintln(a.Stdout, "  search             Find providers and tools by intent")
+	fmt.Fprintln(a.Stdout, "  discover           Show provider/tool metadata and schemas")
+	fmt.Fprintln(a.Stdout, "  invoke             Invoke a tool by dotted id")
+	fmt.Fprintln(a.Stdout, "  <provider> <tool>  Invoke a tool with command-style flags")
+	fmt.Fprintln(a.Stdout, "  help               Show this help")
+	fmt.Fprintln(a.Stdout)
+	fmt.Fprintln(a.Stdout, "Providers and tools:")
+	for _, p := range a.Registry.Providers() {
+		fmt.Fprintf(a.Stdout, "  %s - %s\n", p.ID(), p.ShortDescription())
+		for _, tool := range p.Tools() {
+			fmt.Fprintf(a.Stdout, "    %s - %s\n", tool.ID(), tool.ShortDescription())
+		}
 	}
 }
 
@@ -132,29 +174,20 @@ func (a App) runInvoke(ctx context.Context, flags globalFlags, original, args []
 		return a.finish(ctx, flags, original, nil, nil, errObj("validation_failed", "tool id is required", false), 2)
 	}
 	toolID := args[0]
-	var paramsJSON, providerParamsJSON string
-	for i := 1; i < len(args); i++ {
-		switch args[i] {
-		case "--params-json":
-			i++
-			if i < len(args) {
-				paramsJSON = args[i]
-			}
-		case "--provider-params-json":
-			i++
-			if i < len(args) {
-				providerParamsJSON = args[i]
-			}
-		}
-	}
 	parts := strings.SplitN(toolID, ".", 2)
 	if len(parts) != 2 {
 		return a.finish(ctx, flags, original, nil, nil, errObj("validation_failed", "tool id must be <provider>.<tool>", false), 2)
 	}
+	providerParamsJSON, paramsJSON := a.parseInvocationArgs(parts[0], args[1:])
 	return a.invokeTool(ctx, flags, original, parts[0], parts[1], providerParamsJSON, paramsJSON)
 }
 
 func (a App) runProviderTool(ctx context.Context, flags globalFlags, original []string, providerID, toolID string, args []string) int {
+	providerParamsJSON, paramsJSON := a.parseInvocationArgs(providerID, args)
+	return a.invokeTool(ctx, flags, original, providerID, toolID, providerParamsJSON, paramsJSON)
+}
+
+func (a App) parseInvocationArgs(providerID string, args []string) (string, string) {
 	params := map[string]any{}
 	providerParams := map[string]any{}
 	var paramsJSON, providerParamsJSON string
@@ -196,7 +229,7 @@ func (a App) runProviderTool(ctx context.Context, flags globalFlags, original []
 		p, _ := json.Marshal(params)
 		paramsJSON = string(p)
 	}
-	return a.invokeTool(ctx, flags, original, providerID, toolID, providerParamsJSON, paramsJSON)
+	return providerParamsJSON, paramsJSON
 }
 
 func (a App) invokeTool(ctx context.Context, flags globalFlags, original []string, providerID, toolID, providerParamsJSON, paramsJSON string) int {
@@ -215,7 +248,7 @@ func (a App) invokeTool(ctx context.Context, flags globalFlags, original []strin
 			return a.finish(ctx, flags, original, providerToolIDs(providerID, toolID), nil, errObj("validation_failed", "invalid params json: "+err.Error(), false), 2)
 		}
 	}
-	if err := validateRequired(rt.Tool.InputSchema(), req.Params); err != nil {
+	if err := validateRequiredInvocation(rt.Provider, rt.Tool, req); err != nil {
 		return a.finish(ctx, flags, original, providerToolIDs(providerID, toolID), nil, errObj("validation_failed", err.Error(), false), 2)
 	}
 	rec, err := invocationlog.New(flags.LogDir, redactProviderSecrets(rt.Provider, original))
@@ -353,21 +386,50 @@ func discoverTool(depth string, p provider.Provider, t provider.Tool) map[string
 	return out
 }
 
-func validateRequired(s schema.JSONSchema, params map[string]any) error {
+func validateRequiredInvocation(p provider.Provider, t provider.Tool, req provider.InvokeRequest) error {
+	var missing []string
+	for _, param := range p.Parameters() {
+		if !param.Required {
+			continue
+		}
+		if isMissing(req.ProviderParams[param.Name]) {
+			missing = append(missing, param.Name)
+		}
+	}
+	missing = append(missing, missingRequiredSchemaParams(t.InputSchema(), req.Params)...)
+	if len(missing) == 0 {
+		return nil
+	}
+	sort.Strings(missing)
+	return fmt.Errorf("missing required parameters: %s", strings.Join(missing, ", "))
+}
+
+func missingRequiredSchemaParams(s schema.JSONSchema, params map[string]any) []string {
 	required, ok := s["required"].([]any)
 	if !ok {
 		return nil
 	}
+	var missing []string
 	for _, raw := range required {
 		name, ok := raw.(string)
 		if !ok {
 			continue
 		}
-		if _, exists := params[name]; !exists {
-			return fmt.Errorf("missing required parameter: %s", name)
+		if isMissing(params[name]) {
+			missing = append(missing, name)
 		}
 	}
-	return nil
+	return missing
+}
+
+func isMissing(value any) bool {
+	if value == nil {
+		return true
+	}
+	if s, ok := value.(string); ok {
+		return strings.TrimSpace(s) == ""
+	}
+	return false
 }
 
 func isProviderParam(r *provider.Registry, providerID, flag string) bool {

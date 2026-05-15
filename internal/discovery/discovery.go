@@ -29,6 +29,9 @@ type Next struct {
 	Long  string `json:"long"`
 }
 
+const minimumSearchScore = 0.8
+const maxSearchResults = 5
+
 func Search(ctx context.Context, r *provider.Registry, embedder Embedder, query string) ([]Result, error) {
 	var queryVec []float64
 	var err error
@@ -42,34 +45,38 @@ func Search(ctx context.Context, r *provider.Registry, embedder Embedder, query 
 	for _, p := range r.Providers() {
 		doc := providerDocument(p)
 		providerScore := score(query, doc, queryVec, pseudoVector(doc))
-		results = append(results, Result{
-			Kind:             "provider",
-			Provider:         p.ID(),
-			Name:             p.Name(),
-			Score:            providerScore,
-			ShortDescription: p.ShortDescription(),
-			Categories:       p.Categories(),
-			Next: Next{
-				Short: "factory discover short " + p.ID(),
-				Long:  "factory discover long " + p.ID(),
-			},
-		})
+		if providerScore > minimumSearchScore {
+			results = append(results, Result{
+				Kind:             "provider",
+				Provider:         p.ID(),
+				Name:             p.Name(),
+				Score:            providerScore,
+				ShortDescription: p.ShortDescription(),
+				Categories:       p.Categories(),
+				Next: Next{
+					Short: "factory discover short " + p.ID(),
+					Long:  "factory discover long " + p.ID(),
+				},
+			})
+		}
 		for _, tool := range p.Tools() {
 			toolDoc := toolDocument(p, tool)
 			resultScore := score(query, toolDoc, queryVec, pseudoVector(toolDoc))
-			results = append(results, Result{
-				Kind:             "tool",
-				Provider:         p.ID(),
-				Tool:             tool.ID(),
-				Name:             tool.Name(),
-				Score:            resultScore,
-				ShortDescription: tool.ShortDescription(),
-				Categories:       tool.Categories(),
-				Next: Next{
-					Short: "factory discover short " + p.ID() + " " + tool.ID(),
-					Long:  "factory discover long " + p.ID() + " " + tool.ID(),
-				},
-			})
+			if resultScore > minimumSearchScore {
+				results = append(results, Result{
+					Kind:             "tool",
+					Provider:         p.ID(),
+					Tool:             tool.ID(),
+					Name:             tool.Name(),
+					Score:            resultScore,
+					ShortDescription: tool.ShortDescription(),
+					Categories:       tool.Categories(),
+					Next: Next{
+						Short: "factory discover short " + p.ID() + " " + tool.ID(),
+						Long:  "factory discover long " + p.ID() + " " + tool.ID(),
+					},
+				})
+			}
 		}
 	}
 	sort.SliceStable(results, func(i, j int) bool {
@@ -78,6 +85,9 @@ func Search(ctx context.Context, r *provider.Registry, embedder Embedder, query 
 		}
 		return results[i].Score > results[j].Score
 	})
+	if len(results) > maxSearchResults {
+		results = results[:maxSearchResults]
+	}
 	return results, nil
 }
 
