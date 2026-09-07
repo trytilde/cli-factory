@@ -17,7 +17,7 @@ func main() {
 		}
 	}
 	if docsRoot == "" {
-		docsRoot = filepath.Clean("docs")
+		docsRoot = filepath.Clean("public-docs")
 	}
 	if err := docgen.GenerateTo(docgen.Options{SourceRoot: ".", DocsRoot: docsRoot}); err != nil {
 		fmt.Fprintln(os.Stderr, err)

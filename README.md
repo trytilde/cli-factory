@@ -171,3 +171,11 @@ The harness secrets form writes `providers/<provider>/override_test_secrets.yaml
 CLI Factory is intended to become a shared catalogue of high-quality agent tools. If you want agents to use your SaaS product well, contribute a provider with a small set of thoughtful commands and real e2e tests.
 
 Star the project, open issues or PRs, and join the Tilde community on [Discord](https://discord.gg/jj7sNyCGD4).
+
+## Documentation locations
+
+Repository decisions and change records live in [docs/](docs/README.md). Shared
+Mintlify pages are generated into the independent `public-docs/` submodule. Run
+`git submodule sync` and `git submodule update --init --recursive public-docs`
+after updating an existing checkout; `make generate-docs` initializes it as needed.
+`DOCS_REPO_DIR` can select a different checkout of the shared documentation.

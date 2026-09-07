@@ -21,7 +21,7 @@ CLI Factory is an agent-first Go CLI for discovering and invoking curated SaaS/t
 - Root `secrets.yaml` is plaintext and gitignored. Use `make sops-encrypt` / `make sops-decrypt` to manage `secrets.enc.yaml` and `.env.secrets`.
 - `OPENAI_API_KEY` for `make generate-catalog` can come from `.env.secrets`.
 - Catalogue embeddings are embedded as `catalog/embeddings.bin`, a compact float32 binary index. The JSON file is only the manifest.
-- Human docs are generated into the `docs/` git submodule, which points at the shared `trytilde/docs` Mintlify repo. `make generate-docs` initializes the submodule before writing generated pages.
+- Human docs are generated into the `public-docs/` git submodule, which points at the shared `trytilde/docs` Mintlify repo. `make generate-docs` initializes the submodule before writing generated pages.
 
 ## Required Checks
 
@@ -34,3 +34,14 @@ make build
 ```
 
 Use `make build-all` before release-sensitive changes.
+
+## Required documentation maintenance
+
+For every change, follow [docs/README.md](docs/README.md). Read relevant
+`docs/adrs/` first; create or update records for durable decisions and keep setup,
+README, and public documentation in sync. Maintain the complete change record at
+`docs/updates/pending/<short-slug>.md` until a PR number exists, then rename it to
+`docs/updates/<actual-pr-number>.md` and refresh it after every revision. Missing
+or stale required documentation blocks completion. Record already authorized
+decisions directly; ask only about unresolved choices. See
+[maintain-docs](.agents/skills/maintain-docs/SKILL.md) for the workflow.
