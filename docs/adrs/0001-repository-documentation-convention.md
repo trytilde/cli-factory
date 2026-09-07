@@ -31,3 +31,7 @@ singular directory are updated. Each repository owns its facts; shared structure
 not mean copying another repository's architecture. Release notes and public guides
 remain separate obligations. Supporting indexes/templates and pending change records
 are part of the documentation setup.
+
+## Updates
+
+- 2026-09-07T14:24:55Z: An initialized-submodule fixture showed that switching revisions before deinitialization leaves stale files under `docs/`. Existing checkouts must preserve changes and deinitialize the old path before updating.
