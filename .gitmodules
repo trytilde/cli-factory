@@ -1,5 +1,5 @@
 [submodule "docs"]
-	path = docs
+	path = public-docs
 	url = https://github.com/trytilde/docs
 [submodule "harness-shop"]
 	path = harness-shop

@@ -171,3 +171,21 @@ The harness secrets form writes `providers/<provider>/override_test_secrets.yaml
 CLI Factory is intended to become a shared catalogue of high-quality agent tools. If you want agents to use your SaaS product well, contribute a provider with a small set of thoughtful commands and real e2e tests.
 
 Star the project, open issues or PRs, and join the Tilde community on [Discord](https://discord.gg/jj7sNyCGD4).
+
+## Documentation locations
+
+Repository decisions and change records live in [docs/](docs/README.md). Shared
+Mintlify pages are generated into the independent `public-docs/` submodule.
+`DOCS_REPO_DIR` can select a different checkout of the shared documentation.
+
+When updating an existing checkout that still uses the old `docs/` submodule,
+commit or back up any submodule changes first, then run `git submodule deinit docs`
+**before** switching to this revision. Do not force deinitialization past local
+changes. After updating the branch, run `git submodule sync` and
+`git submodule update --init --recursive public-docs`; `make generate-docs`
+initializes the new location as needed. Fresh clones only need the latter update.
+
+If an existing checkout was updated before deinitialization, the old submodule may
+leave a stale `docs/.git` and shared-documentation files behind. Preserve that
+checkout's changes before cleaning up the old files. Do not remove the entire
+`docs/` directory: it now contains tracked repository records.

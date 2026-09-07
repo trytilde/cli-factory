@@ -31,7 +31,7 @@ Read:
 - affected tool directories
 - affected `input-schema.yaml` and `output-schema.yaml`
 - affected `e2e_test.go`
-- generated Mintlify docs under `docs/projects/cli-factory/providers/<provider>/`
+- generated Mintlify docs under `public-docs/projects/cli-factory/providers/<provider>/`
 - recent invocation logs if the user provided a failing command output
 
 Also inspect:
@@ -40,7 +40,7 @@ Also inspect:
 - `internal/docgen`
 - `Makefile`
 - `.gitignore`
-- shared docs submodule `docs/docs.json`
+- shared docs submodule `public-docs/docs.json`
 - relevant `CONTEXT.md` terms and ADRs
 
 If the repo already has behavior that conflicts with the requested update, surface it before editing.

@@ -4,7 +4,7 @@ export BASH_ENV := $(HOME)/.bashrc
 SOPS_KMS_ARN ?= arn:aws:kms:us-east-1:914788356809:alias/tilde-app-dev-sops
 CATALOG_EMBEDDING_MODEL ?= text-embedding-3-small
 CATALOG_EMBEDDING_DIMENSIONS ?= 768
-DOCS_REPO_DIR ?= docs
+DOCS_REPO_DIR ?= public-docs
 
 .PHONY: test test-unit test-e2e test-provider test-provider-tool ensure-docs-submodule generate-metadata generate-docs generate-catalog generate-catalog-provider generate-catalog-tool build build-all sops-encrypt sops-decrypt env-secrets sops-encrypt-provider-test-secrets help
 
@@ -29,7 +29,7 @@ test-provider-tool: generate-metadata ## Run e2e tests for one tool: make test-p
 	go test ./providers/$(PROVIDER)/$(TOOL) -run TestE2E
 
 ensure-docs-submodule: ## Ensure shared docs git submodule is initialized
-	git submodule update --init --recursive docs
+	git submodule update --init --recursive public-docs
 
 generate-metadata: ## Generate static Go metadata/schema files from provider YAML
 	go run ./tools/generatemetadata

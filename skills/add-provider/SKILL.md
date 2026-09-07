@@ -30,7 +30,7 @@ Use this skill when creating a new provider under `providers/<provider>` or addi
    - `internal/testharness`
    - `Makefile`
 4. Inspect shared Mintlify docs conventions:
-   - `docs/` git submodule
+   - `public-docs/` git submodule
    - `DOCS_REPO_DIR`
    - `<docs repo>/docs.json`
    - `internal/docgen`
@@ -120,7 +120,7 @@ providers/<provider>/
 
 Use hyphenated command directories, for example `send-email`, because the directory mirrors the command path. Use valid Go package names inside files.
 
-Mintlify human documentation is generated from these metadata and schema files into the `docs/` git submodule for the shared `trytilde/docs` repo:
+Mintlify human documentation is generated from these metadata and schema files into the `public-docs/` git submodule for the shared `trytilde/docs` repo:
 
 ```text
 <docs repo>/projects/cli-factory/providers/<provider>/index.mdx
